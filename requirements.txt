@@ -9,7 +9,7 @@ openai>=1.30.0              # OpenAI + Groq + Together + Mistral + DeepSeek + Ol
 # Ollama/LM Studio: sem SDK, usa openai com base_url local
 
 # ── Ferramentas dos agentes ────────────────────────────────────────────────
-duckduckgo-search>=6.0.0    # Web search grátis (WebSearchTool)
+ddgs>=9.0.0                 # Web search grátis (renomeado de duckduckgo-search)
 requests>=2.31.0            # HTTP
 
 # ── Leitura de documentos (opcional, instale o que usar) ──────────────────
