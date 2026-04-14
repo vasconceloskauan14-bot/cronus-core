@@ -125,7 +125,11 @@ AGENT_DESCRIPTIONS = {
 
 def _run(cmd: list[str], cwd: Path = ROOT) -> int:
     """Executa comando e retorna exit code."""
-    result = subprocess.run(cmd, cwd=str(cwd))
+    import platform
+    kwargs: dict = {"cwd": str(cwd)}
+    if platform.system() == "Windows":
+        kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+    result = subprocess.run(cmd, **kwargs)
     return result.returncode
 
 

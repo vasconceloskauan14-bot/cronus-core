@@ -301,7 +301,10 @@ class ObsidianRadarWorker:
             ]
 
     def _notify(self, title: str, message: str) -> None:
-        """Exibe notificação toast nativa do Windows."""
+        """Exibe notificação toast nativa do Windows (sem abrir janela CMD)."""
+        import platform
+        if platform.system() != "Windows":
+            return  # Railway é Linux — sem powershell
         try:
             safe_title = title.replace("'", "").replace('"', "")
             safe_msg = message.replace("'", "").replace('"', "")
@@ -321,6 +324,7 @@ class ObsidianRadarWorker:
                 ["powershell.exe", "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", ps],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW,
             )
         except Exception:
             pass
