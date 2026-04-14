@@ -1,18 +1,18 @@
 """
-CRONUS Git Sync Worker
-Roda no Railway: commita e faz push das notas novas para o GitHub a cada 30 min.
-No PC local: Obsidian Git plugin faz pull automático.
+CRONUS Git Sync Worker — via GitHub API
+Envia apenas arquivos NOVOS/MODIFICADOS para o GitHub sem conflitos de histórico.
+Railway não precisa de git local — só usa a API do GitHub com requests.
 
-Variáveis de ambiente necessárias no Railway:
+Variáveis de ambiente necessárias:
   GIT_REPO_URL  = https://<token>@github.com/<user>/<repo>.git
-  GIT_USER_NAME = CRONUS Bot
-  GIT_USER_EMAIL = cronus@auto.bot
+  GIT_USER_NAME = CRONUS Bot          (opcional)
+  GIT_SYNC_INTERVAL_MINUTES = 30      (opcional, default 30)
 """
 from __future__ import annotations
 
+import base64
+import json
 import os
-import subprocess
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -22,11 +22,6 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def _log(msg: str) -> None:
     print(f"[git-sync] {datetime.now().strftime('%H:%M:%S')} {msg}", flush=True)
-
-
-def _run(cmd: list[str], cwd: Path) -> tuple[int, str]:
-    result = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True)
-    return result.returncode, (result.stdout + result.stderr).strip()
 
 
 def _load_dotenv() -> None:
@@ -41,86 +36,164 @@ def _load_dotenv() -> None:
         os.environ.setdefault(k.strip(), v.strip())
 
 
-def setup_git(vault: Path) -> bool:
-    repo_url = os.environ.get("GIT_REPO_URL", "").strip()
-    if not repo_url:
-        _log("GIT_REPO_URL não configurada — sync desativado")
+def _parse_repo_url(url: str) -> tuple[str, str]:
+    """Extrai (token, owner/repo) da URL https://<token>@github.com/<owner>/<repo>.git"""
+    try:
+        # https://TOKEN@github.com/owner/repo.git
+        after_https = url.replace("https://", "")
+        token, rest = after_https.split("@", 1)
+        repo = rest.replace("github.com/", "").replace(".git", "")
+        return token, repo
+    except Exception:
+        return "", ""
+
+
+def _github_get(url: str, token: str) -> dict:
+    import urllib.request
+    req = urllib.request.Request(url)
+    req.add_header("Authorization", f"token {token}")
+    req.add_header("Accept", "application/vnd.github.v3+json")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return json.loads(r.read())
+    except Exception:
+        return {}
+
+
+def _github_put(url: str, token: str, data: dict) -> bool:
+    import urllib.request
+    body = json.dumps(data).encode()
+    req = urllib.request.Request(url, data=body, method="PUT")
+    req.add_header("Authorization", f"token {token}")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Accept", "application/vnd.github.v3+json")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return r.status in (200, 201)
+    except Exception as e:
+        _log(f"Erro no PUT {url}: {e}")
         return False
 
-    name  = os.environ.get("GIT_USER_NAME", "CRONUS Bot")
-    email = os.environ.get("GIT_USER_EMAIL", "cronus@auto.bot")
 
-    # Inicia o repo se necessário
-    git_dir = vault / ".git"
-    if not git_dir.exists():
-        _log("Inicializando repositório git no vault...")
-        _run(["git", "init"], vault)
-        _run(["git", "remote", "add", "origin", repo_url], vault)
-        # Tenta fazer pull inicial para trazer notas já existentes no GitHub
-        _run(["git", "fetch", "origin"], vault)
-        code, _ = _run(["git", "checkout", "-B", "main", "origin/main"], vault)
-        if code != 0:
-            # Repo novo — primeiro commit
-            _run(["git", "checkout", "-b", "main"], vault)
-
-    _run(["git", "config", "user.name", name], vault)
-    _run(["git", "config", "user.email", email], vault)
-    _run(["git", "remote", "set-url", "origin", repo_url], vault)
-    return True
+def _get_file_sha(token: str, repo: str, path: str) -> str | None:
+    """Retorna o SHA do arquivo no GitHub, ou None se não existir."""
+    info = _github_get(f"https://api.github.com/repos/{repo}/contents/{path}", token)
+    return info.get("sha")
 
 
-def sync_once(vault: Path) -> bool:
-    """Commita e faz push de tudo que mudou no vault. Retorna True se houve push."""
-    # Verifica se há mudanças
-    code, out = _run(["git", "status", "--porcelain"], vault)
-    if code != 0:
-        _log(f"Erro ao checar status git: {out}")
-        return False
+def _upload_file(token: str, repo: str, rel_path: str, content_bytes: bytes, message: str) -> bool:
+    """Cria ou atualiza um arquivo no GitHub via API."""
+    encoded = base64.b64encode(content_bytes).decode()
+    sha = _get_file_sha(token, repo, rel_path)
+    data: dict = {"message": message, "content": encoded}
+    if sha:
+        data["sha"] = sha
+    return _github_put(
+        f"https://api.github.com/repos/{repo}/contents/{rel_path}",
+        token, data
+    )
 
-    if not out.strip():
-        _log("Nenhuma nota nova para commitar")
-        return False
 
-    files_changed = len(out.strip().splitlines())
-    _log(f"{files_changed} arquivo(s) alterado(s) — commitando...")
+def _get_known_shas(token: str, repo: str) -> dict[str, str]:
+    """Retorna {path: sha} de todos os arquivos já no GitHub (para detectar mudanças)."""
+    tree = _github_get(
+        f"https://api.github.com/repos/{repo}/git/trees/main?recursive=1",
+        token
+    )
+    return {item["path"]: item["sha"] for item in tree.get("tree", []) if item.get("type") == "blob"}
 
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    _run(["git", "add", "-A"], vault)
-    _run(["git", "commit", "-m", f"CRONUS: notas atualizadas {now} ({files_changed} arquivo(s))"], vault)
 
-    code, out = _run(["git", "push", "origin", "main", "--force-with-lease"], vault)
-    if code == 0:
-        _log(f"Push OK: {files_changed} arquivo(s) enviados para GitHub")
-        return True
-    else:
-        # Tenta push forçado se houver conflito de histórico (primeiro push)
-        code2, out2 = _run(["git", "push", "origin", "main", "--force"], vault)
-        if code2 == 0:
-            _log(f"Push forçado OK: {files_changed} arquivo(s)")
-            return True
-        _log(f"Erro no push: {out2}")
-        return False
+def _local_sha(content: bytes) -> str:
+    """Git blob SHA: sha1("blob <size>\0<content>")"""
+    import hashlib
+    header = f"blob {len(content)}\0".encode()
+    return hashlib.sha1(header + content).hexdigest()
+
+
+def sync_once(vault: Path, token: str, repo: str) -> int:
+    """Envia arquivos novos/modificados do vault para o GitHub. Retorna nº de arquivos enviados."""
+    _log("Verificando arquivos novos no vault...")
+
+    # Arquivos que já estão no GitHub (path → sha)
+    known = _get_known_shas(token, repo)
+
+    # Só sincroniza notas de pesquisa (Radar + probabilisticas + Feed + Insights)
+    sync_patterns = [
+        "Memoria/Radar/**/*.md",
+        "Memoria/Feed/*.md",
+        "Memoria/Insights/*.md",
+        "Memoria/Pesquisas/**/*.md",
+        "probabilisticas/**/*.md",
+    ]
+
+    to_upload: list[Path] = []
+    for pattern in sync_patterns:
+        to_upload.extend(vault.glob(pattern))
+
+    if not to_upload:
+        _log("Nenhuma nota de pesquisa encontrada ainda")
+        return 0
+
+    uploaded = 0
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    for local_path in to_upload:
+        try:
+            content = local_path.read_bytes()
+        except Exception:
+            continue
+
+        rel = local_path.relative_to(vault).as_posix()
+        local_blob_sha = _local_sha(content)
+
+        # Só envia se for novo ou diferente
+        if known.get(rel) == local_blob_sha:
+            continue
+
+        ok = _upload_file(token, repo, rel, content, f"CRONUS: {rel} ({now_str})")
+        if ok:
+            uploaded += 1
+            _log(f"  ✓ {rel}")
+        else:
+            _log(f"  ✗ falhou: {rel}")
+
+        # Pausa pequena para não saturar a API do GitHub
+        time.sleep(0.5)
+
+    return uploaded
 
 
 def run_forever(interval_minutes: int = 30) -> None:
     _load_dotenv()
+
+    repo_url = os.environ.get("GIT_REPO_URL", "").strip()
+    if not repo_url:
+        _log("GIT_REPO_URL não configurada — sync desativado")
+        return
+
+    token, repo = _parse_repo_url(repo_url)
+    if not token or not repo:
+        _log(f"GIT_REPO_URL inválida: {repo_url}")
+        return
 
     vault_raw = os.environ.get("OBSIDIAN_AI_VAULT", "obsidian-ai-vault").strip()
     vault = Path(vault_raw) if Path(vault_raw).is_absolute() else ROOT / vault_raw
     vault.mkdir(parents=True, exist_ok=True)
 
     _log(f"Vault: {vault}")
+    _log(f"Repo: {repo}")
     _log(f"Sync a cada {interval_minutes} min")
-
-    if not setup_git(vault):
-        _log("Sync desativado — saindo")
-        return
 
     while True:
         try:
-            sync_once(vault)
+            n = sync_once(vault, token, repo)
+            if n > 0:
+                _log(f"{n} arquivo(s) enviados para GitHub")
+            else:
+                _log("Nenhuma nota nova para enviar")
         except Exception as e:
             _log(f"Erro inesperado: {e}")
+
         _log(f"Próximo sync em {interval_minutes} min...")
         time.sleep(interval_minutes * 60)
 
