@@ -172,7 +172,10 @@ class OpenAICompatibleProvider(BaseProvider):
                 if "insufficient_quota" in err_lower or "quota" in err_lower:
                     raise RuntimeError(f"{self.provider_alias}: quota insuficiente")
                 if "rate" in err_lower or "429" in err:
-                    time.sleep(2 * attempt)
+                    # Groq reseta a cada 60s — espera o suficiente antes de tentar de novo
+                    wait = 65 if attempt == 1 else 30
+                    print(f"[{self.provider_alias}] 429 rate limit, aguardando {wait}s (tentativa {attempt}/3)...")
+                    time.sleep(wait)
                 elif attempt == 3:
                     raise
                 else:
