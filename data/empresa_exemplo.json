@@ -1,0 +1,35 @@
+{
+  "nome": "NovaTech SaaS",
+  "descricao": "Plataforma de gestão de RH para PMEs brasileiras",
+  "fundacao": "2022",
+  "stage": "Series A",
+  "segmento": "B2B SaaS",
+  "industria": "HR Tech",
+  "mercado_alvo": "PMEs com 50-500 funcionários no Brasil",
+  "modelo_negocio": "SaaS subscription mensal",
+  "mrr_atual": 280000,
+  "arr_atual": 3360000,
+  "clientes_ativos": 142,
+  "ticket_medio_mensal": 1972,
+  "churn_mensal_pct": 2.1,
+  "nrr_pct": 112,
+  "cac": 4200,
+  "ltv": 28000,
+  "runway_meses": 18,
+  "equipe": 34,
+  "financiamento_total": 8000000,
+  "produto": {
+    "nome": "NovaRH",
+    "features_principais": ["ponto eletrônico", "folha de pagamento", "gestão de férias", "onboarding digital", "avaliação de performance"],
+    "integrações": ["Slack", "Google Workspace", "ContaAzul", "Omie"],
+    "plataformas": ["web", "iOS", "Android"]
+  },
+  "concorrentes_principais": ["Gupy", "Sólides", "Convenia", "Senior Sistemas"],
+  "diferenciais": ["UX superior", "preço 30% menor que incumbentes", "suporte humano em português"],
+  "metas_12_meses": {
+    "mrr_alvo": 700000,
+    "clientes_alvo": 350,
+    "novos_mercados": ["Argentina", "México"],
+    "produto": "lançar módulo de recrutamento e seleção"
+  }
+}

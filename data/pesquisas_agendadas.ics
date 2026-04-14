@@ -1,0 +1,12 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//ULTIMATE CRONUS//Pesquisa Calendar//PT-BR
+BEGIN:VEVENT
+UID:pesquisa-editor-br-20260411@ultimatecronus
+DTSTAMP:20260411T120000Z
+DTSTART:20260411T150000
+DTEND:20260411T153000
+SUMMARY:Pesquisa: qual tipo de editor mais esta sendo procurado no Brasil
+DESCRIPTION:Use esta agenda para disparar pesquisas automaticas e memorizar no Obsidian.
+END:VEVENT
+END:VCALENDAR

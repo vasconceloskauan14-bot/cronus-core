@@ -1,0 +1,42 @@
+# ULTIMATE CRONUS — Dependências Python
+
+# ── Core AI Providers ──────────────────────────────────────────────────────
+anthropic>=0.40.0           # Claude (Opus, Sonnet, Haiku)
+openai>=1.30.0              # OpenAI + Groq + Together + Mistral + DeepSeek + Ollama + vLLM
+
+# ── Opcional: instale só o que for usar ───────────────────────────────────
+# google-generativeai>=0.8.0  # Gemini 1.5/2.0      → pip install google-generativeai
+# Ollama/LM Studio: sem SDK, usa openai com base_url local
+
+# ── Ferramentas dos agentes ────────────────────────────────────────────────
+duckduckgo-search>=6.0.0    # Web search grátis (WebSearchTool)
+requests>=2.31.0            # HTTP
+
+# ── Leitura de documentos (opcional, instale o que usar) ──────────────────
+# pdfplumber>=0.10.0         # PDF (melhor)          → pip install pdfplumber
+# PyPDF2>=3.0.0              # PDF (fallback)        → pip install PyPDF2
+# python-docx>=1.1.0         # Word DOCX             → pip install python-docx
+# openpyxl>=3.1.0            # Excel XLSX            → pip install openpyxl
+
+# ── Memória vetorial (opcional) ────────────────────────────────────────────
+# chromadb>=0.5.0            # Vector DB semântico   → pip install chromadb
+# (sem chromadb: usa TF-IDF JSON automático — zero config)
+
+# ── Multimodal (opcional) ─────────────────────────────────────────────────
+# Pillow>=10.0.0             # Imagens (Gemini vision) → pip install Pillow
+
+# ── Automações web ─────────────────────────────────────────────────────────
+flask>=3.0.0                # API/webhooks
+
+# ── Monitoramento de arquivos ─────────────────────────────────────────────
+watchdog>=4.0.0             # event_triggers.py
+
+# ── Variáveis de ambiente ─────────────────────────────────────────────────
+python-dotenv>=1.0.0
+
+# ── Utilitários ───────────────────────────────────────────────────────────
+python-dateutil>=2.8.2
+gitpython>=3.1.40           # Git sync (Railway → GitHub → Obsidian local)
+
+# ── Instalação mínima (sem opcionais): ────────────────────────────────────
+# pip install anthropic openai duckduckgo-search requests flask watchdog python-dotenv

@@ -1,0 +1,156 @@
+{
+  "empresa": "ULTIMATE CRONUS — Configure para sua empresa",
+  "atualizado_em": "2026-04-09",
+  "periodo": "mensal",
+  "kpis": {
+    "financeiro": {
+      "mrr": {
+        "atual": 280000,
+        "meta": 400000,
+        "alerta_abaixo": 250000,
+        "unidade": "R$",
+        "descricao": "Monthly Recurring Revenue"
+      },
+      "churn_mensal": {
+        "atual": 2.1,
+        "meta": 1.5,
+        "alerta_acima": 3.0,
+        "unidade": "%",
+        "descricao": "Churn mensal em %"
+      },
+      "cac": {
+        "atual": 4200,
+        "meta": 3500,
+        "alerta_acima": 5500,
+        "unidade": "R$",
+        "descricao": "Custo de Aquisição de Cliente"
+      },
+      "ltv": {
+        "atual": 28000,
+        "meta": 35000,
+        "alerta_abaixo": 20000,
+        "unidade": "R$",
+        "descricao": "Lifetime Value"
+      },
+      "ltv_cac_ratio": {
+        "atual": 6.7,
+        "meta": 8.0,
+        "alerta_abaixo": 3.0,
+        "unidade": "x",
+        "descricao": "LTV/CAC ratio (meta: >3x)"
+      },
+      "runway": {
+        "atual": 18,
+        "meta": 24,
+        "alerta_abaixo": 12,
+        "unidade": "meses",
+        "descricao": "Meses de caixa disponíveis"
+      }
+    },
+    "vendas": {
+      "novos_clientes_mes": {
+        "atual": 18,
+        "meta": 25,
+        "alerta_abaixo": 10,
+        "unidade": "clientes",
+        "descricao": "Novos clientes por mês"
+      },
+      "pipeline_valor": {
+        "atual": 820000,
+        "meta": 1200000,
+        "alerta_abaixo": 600000,
+        "unidade": "R$",
+        "descricao": "Valor total do pipeline"
+      },
+      "taxa_conversao_pipeline": {
+        "atual": 22,
+        "meta": 30,
+        "alerta_abaixo": 15,
+        "unidade": "%",
+        "descricao": "% do pipeline que fecha"
+      },
+      "ciclo_vendas_dias": {
+        "atual": 45,
+        "meta": 30,
+        "alerta_acima": 60,
+        "unidade": "dias",
+        "descricao": "Tempo médio para fechar um deal"
+      }
+    },
+    "produto": {
+      "nps": {
+        "atual": 42,
+        "meta": 60,
+        "alerta_abaixo": 20,
+        "unidade": "score",
+        "descricao": "Net Promoter Score"
+      },
+      "dau_mau": {
+        "atual": 0.32,
+        "meta": 0.45,
+        "alerta_abaixo": 0.20,
+        "unidade": "ratio",
+        "descricao": "DAU/MAU ratio (engajamento)"
+      },
+      "activation_rate": {
+        "atual": 68,
+        "meta": 80,
+        "alerta_abaixo": 55,
+        "unidade": "%",
+        "descricao": "% que completa onboarding"
+      },
+      "feature_adoption_principal": {
+        "atual": 74,
+        "meta": 85,
+        "alerta_abaixo": 60,
+        "unidade": "%",
+        "descricao": "% usando feature principal"
+      }
+    },
+    "marketing": {
+      "leads_qualificados_mes": {
+        "atual": 180,
+        "meta": 280,
+        "alerta_abaixo": 120,
+        "unidade": "leads",
+        "descricao": "MQLs por mês"
+      },
+      "custo_por_lead": {
+        "atual": 85,
+        "meta": 65,
+        "alerta_acima": 120,
+        "unidade": "R$",
+        "descricao": "CPL médio"
+      },
+      "trafego_organico": {
+        "atual": 12000,
+        "meta": 25000,
+        "alerta_abaixo": 8000,
+        "unidade": "visitas/mês",
+        "descricao": "Tráfego orgânico mensal"
+      }
+    },
+    "operacional": {
+      "satisfacao_equipe_enps": {
+        "atual": 35,
+        "meta": 50,
+        "alerta_abaixo": 15,
+        "unidade": "score",
+        "descricao": "Employee NPS"
+      },
+      "sla_suporte_horas": {
+        "atual": 4,
+        "meta": 2,
+        "alerta_acima": 8,
+        "unidade": "horas",
+        "descricao": "Tempo médio de resposta ao suporte"
+      }
+    }
+  },
+  "alertas_configurados": [
+    {"kpi": "churn_mensal", "condicao": "acima", "valor": 3.0, "canal": "slack", "urgencia": "critica"},
+    {"kpi": "runway", "condicao": "abaixo", "valor": 12, "canal": "slack", "urgencia": "critica"},
+    {"kpi": "mrr", "condicao": "abaixo", "valor": 250000, "canal": "slack", "urgencia": "alta"},
+    {"kpi": "nps", "condicao": "abaixo", "valor": 20, "canal": "email", "urgencia": "alta"}
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "kpis": [
+    {
+      "name": "mrr",
+      "label": "MRR (Receita Recorrente Mensal)",
+      "unit": "R$",
+      "direction": "up",
+      "alert_threshold_pct": -5,
+      "target_monthly_growth": 15
+    },
+    {
+      "name": "novos_clientes",
+      "label": "Novos Clientes",
+      "unit": "clientes",
+      "direction": "up",
+      "alert_threshold_pct": -20,
+      "target_weekly": 30
+    },
+    {
+      "name": "churn_rate",
+      "label": "Taxa de Churn",
+      "unit": "%",
+      "direction": "down",
+      "alert_threshold_pct": 10,
+      "target_max": 2.0
+    },
+    {
+      "name": "cac",
+      "label": "CAC (Custo de Aquisição)",
+      "unit": "R$",
+      "direction": "down",
+      "alert_threshold_pct": 15,
+      "target_max": 1000
+    },
+    {
+      "name": "ltv",
+      "label": "LTV (Lifetime Value)",
+      "unit": "R$",
+      "direction": "up",
+      "alert_threshold_pct": -10,
+      "target_min": 15000
+    },
+    {
+      "name": "ltv_cac_ratio",
+      "label": "LTV/CAC Ratio",
+      "unit": "x",
+      "direction": "up",
+      "alert_threshold_pct": -10,
+      "target_min": 10
+    },
+    {
+      "name": "nps",
+      "label": "NPS (Net Promoter Score)",
+      "unit": "pontos",
+      "direction": "up",
+      "alert_threshold_pct": -5,
+      "target_min": 70
+    },
+    {
+      "name": "leads",
+      "label": "Leads Gerados",
+      "unit": "leads",
+      "direction": "up",
+      "alert_threshold_pct": -15,
+      "target_weekly": 150
+    },
+    {
+      "name": "conversao_lead_cliente",
+      "label": "Conversão Lead → Cliente",
+      "unit": "%",
+      "direction": "up",
+      "alert_threshold_pct": -10,
+      "target_min": 15
+    },
+    {
+      "name": "ticket_medio",
+      "label": "Ticket Médio",
+      "unit": "R$",
+      "direction": "up",
+      "alert_threshold_pct": -10,
+      "target_min": 1200
+    }
+  ]
+}

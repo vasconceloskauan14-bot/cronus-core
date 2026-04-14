@@ -1,0 +1,44 @@
+{
+  "schedules": [
+    {
+      "name": "CRONUS_DailyReport",
+      "description": "Relatório executivo diário",
+      "script": "automation/daily_report.py",
+      "cron": "0 8 * * *",
+      "windows_schedule": "/SC DAILY /ST 08:00",
+      "enabled": true,
+      "notify_slack": true
+    },
+    {
+      "name": "CRONUS_WeeklyKPIs",
+      "description": "Relatório semanal de KPIs",
+      "script": "automation/weekly_kpis.py",
+      "cron": "0 9 * * 1",
+      "windows_schedule": "/SC WEEKLY /D MON /ST 09:00",
+      "enabled": true,
+      "notify_slack": true
+    },
+    {
+      "name": "CRONUS_RadarHourly",
+      "description": "RADAR — scan horário de mercado",
+      "script": "agents/radar_agent.py",
+      "cron": "0 * * * *",
+      "windows_schedule": "/SC HOURLY /MO 1",
+      "enabled": true,
+      "notify_slack": false
+    },
+    {
+      "name": "CRONUS_SwarmTrends",
+      "description": "SWARM — tendências a cada 4 horas",
+      "script": "agents/swarm_agent.py",
+      "cron": "0 */4 * * *",
+      "windows_schedule": "/SC HOURLY /MO 4",
+      "enabled": false,
+      "notify_slack": false
+    }
+  ],
+  "notifications": {
+    "slack_webhook_env": "SLACK_WEBHOOK_URL",
+    "email_env": "REPORT_EMAIL"
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "_comment": "ULTIMATE CRONUS — Configuração de providers de IA",
+  "_doc": "Defina 'default' para o provider padrão. Override por agente em 'agents'.",
+
+  "default": "groq",
+
+  "providers": {
+    "anthropic": {
+      "default_model": "claude-sonnet-4-6",
+      "api_key": ""
+    },
+    "openai": {
+      "default_model": "gpt-4o-mini",
+      "api_key": ""
+    },
+    "groq": {
+      "default_model": "llama-3.3-70b-versatile",
+      "api_key": "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"
+    },
+    "together": {
+      "default_model": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+      "api_key": ""
+    },
+    "mistral": {
+      "default_model": "mistral-small-latest",
+      "api_key": ""
+    },
+    "deepseek": {
+      "default_model": "deepseek-chat",
+      "api_key": ""
+    },
+    "perplexity": {
+      "default_model": "sonar",
+      "api_key": ""
+    },
+    "gemini": {
+      "default_model": "gemini-2.0-flash",
+      "api_key": ""
+    },
+    "ollama": {
+      "default_model": "llama3.2",
+      "base_url": "http://localhost:11434/v1",
+      "api_key": "local"
+    },
+    "lmstudio": {
+      "default_model": "local-model",
+      "base_url": "http://localhost:1234/v1",
+      "api_key": "lm-studio"
+    },
+    "vllm": {
+      "default_model": "mistralai/Mistral-7B-Instruct-v0.2",
+      "base_url": "http://localhost:8000/v1",
+      "api_key": "local"
+    }
+  },
+
+  "agents": {
+    "_comment": "Override de provider/modelo por agente. Remove ou deixe vazio para usar o default.",
+    "SWARM": {
+      "provider": "groq",
+      "model": "llama-3.3-70b-versatile"
+    },
+    "RADAR": {
+      "provider": "groq",
+      "model": "llama-3.3-70b-versatile"
+    },
+    "SCRIBE": {
+      "provider": "openai",
+      "model": "gpt-4o"
+    },
+    "ANALYST": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-6"
+    },
+    "CEO": {
+      "provider": "anthropic",
+      "model": "claude-opus-4-6"
+    },
+    "CAPITAL": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-6"
+    },
+    "INNOVATION": {
+      "provider": "anthropic",
+      "model": "claude-opus-4-6"
+    },
+    "HUNTER": {
+      "provider": "groq",
+      "model": "llama-3.3-70b-versatile"
+    }
+  },
+
+  "routing": {
+    "_comment": "Estratégias de roteamento automático por tipo de tarefa",
+    "reasoning":  {"provider": "anthropic", "model": "claude-opus-4-6"},
+    "speed":      {"provider": "groq",      "model": "llama-3.3-70b-versatile"},
+    "cost":       {"provider": "groq",      "model": "llama-3.1-8b-instant"},
+    "creative":   {"provider": "openai",    "model": "gpt-4o"},
+    "local":      {"provider": "ollama",    "model": "llama3.2"},
+    "search":     {"provider": "perplexity","model": "sonar-pro"}
+  }
+}

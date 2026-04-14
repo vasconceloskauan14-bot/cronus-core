@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zeus no Obsidian</title>
+  <style>
+    :root {
+      --card: rgba(255, 252, 247, 0.88);
+      --ink: #172221;
+      --muted: #536260;
+      --line: rgba(23, 34, 33, 0.12);
+      --accent: #0c7c6f;
+      --accent-soft: #d7efe9;
+      --accent-strong: #075850;
+      --warm: #b4602d;
+      --danger: #b23c2c;
+      --shadow: 0 22px 60px rgba(31, 38, 37, 0.12);
+      --radius: 24px;
+      --font-ui: "Bahnschrift", "Trebuchet MS", "Segoe UI Variable", sans-serif;
+      --font-display: "Georgia", "Palatino Linotype", serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-ui);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(12, 124, 111, 0.16), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(180, 96, 45, 0.17), transparent 34%),
+        linear-gradient(160deg, #f7f1e8 0%, #efe6d8 48%, #f3eee6 100%);
+    }
+
+    .shell {
+      width: min(1240px, calc(100% - 32px));
+      margin: 24px auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(255, 250, 243, 0.92), rgba(255, 255, 255, 0.74));
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) + 8px);
+      box-shadow: var(--shadow);
+      padding: 26px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -80px auto;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(12, 124, 111, 0.16), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(32px, 6vw, 54px);
+      line-height: 0.98;
+      max-width: 10ch;
+    }
+
+    .hero p {
+      max-width: 70ch;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .status-card,
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .status-card {
+      padding: 16px 18px;
+      transform: translateY(10px);
+      opacity: 0;
+      animation: rise 550ms ease forwards;
+    }
+
+    .status-card:nth-child(2) { animation-delay: 90ms; }
+    .status-card:nth-child(3) { animation-delay: 160ms; }
+
+    .status-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .status-card strong {
+      font-size: 20px;
+      word-break: break-word;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+      gap: 18px;
+    }
+
+    .panel { padding: 20px; }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .panel p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .chat-log {
+      margin-top: 18px;
+      display: grid;
+      gap: 14px;
+      min-height: 380px;
+      max-height: 62vh;
+      overflow: auto;
+      padding-right: 6px;
+    }
+
+    .bubble {
+      padding: 16px 18px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 10px 28px rgba(24, 30, 29, 0.07);
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .bubble.user {
+      background: linear-gradient(135deg, rgba(12, 124, 111, 0.12), rgba(12, 124, 111, 0.04));
+      border-color: rgba(12, 124, 111, 0.18);
+    }
+
+    .bubble.assistant {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(230, 220, 205, 0.4));
+    }
+
+    .bubble.system {
+      background: linear-gradient(135deg, rgba(180, 96, 45, 0.12), rgba(180, 96, 45, 0.03));
+      border-color: rgba(180, 96, 45, 0.22);
+      color: #6d4428;
+    }
+
+    .bubble strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    form {
+      margin-top: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    textarea,
+    input,
+    select {
+      width: 100%;
+      border: 1px solid rgba(23, 34, 33, 0.15);
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 18px;
+      padding: 14px 16px;
+      font: inherit;
+      color: var(--ink);
+      transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    textarea:focus,
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: rgba(12, 124, 111, 0.55);
+      box-shadow: 0 0 0 4px rgba(12, 124, 111, 0.11);
+      transform: translateY(-1px);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 124px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 18px;
+      font: inherit;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 26px rgba(20, 30, 30, 0.14);
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.6;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--accent), #0f665e);
+      color: white;
+    }
+
+    .secondary {
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .memory-list {
+      margin-top: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .memory-item {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid var(--line);
+    }
+
+    .memory-item strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .memory-item code {
+      display: inline-block;
+      margin: 0 0 8px;
+      color: var(--accent-strong);
+      background: rgba(12, 124, 111, 0.08);
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .memory-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toggle input {
+      width: auto;
+      margin: 0;
+      padding: 0;
+      accent-color: var(--accent);
+    }
+
+    .note-meta {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .hint {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-left: 4px solid var(--warm);
+      background: rgba(180, 96, 45, 0.08);
+      border-radius: 16px;
+      color: #72492b;
+      line-height: 1.55;
+    }
+
+    .error { color: var(--danger); }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="eyebrow">Zeus + Vault</div>
+      <h1>Zeus, cerebro vivo no Obsidian</h1>
+      <p>Esta interface transforma o Obsidian no cerebro do Zeus. Voce conversa, ensina comandos e falas, e tudo vira memoria persistente em Markdown dentro do vault.</p>
+      <div class="status-grid">
+        <div class="status-card">
+          <span>Provider</span>
+          <strong id="provider-name">carregando</strong>
+        </div>
+        <div class="status-card">
+          <span>Vault</span>
+          <strong id="vault-path">carregando</strong>
+        </div>
+        <div class="status-card">
+          <span>Memorias do Zeus</span>
+          <strong id="note-count">0</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <article class="panel">
+        <h2>Conversa com Zeus</h2>
+        <p id="status-text">Iniciando sessao...</p>
+        <div class="chat-log" id="chat-log"></div>
+
+        <form id="chat-form">
+          <textarea id="chat-input" placeholder="Fale ou escreva para o Zeus. Ex.: guarda este comando, aprende esta fala e use isso nas proximas respostas."></textarea>
+          <div class="actions">
+            <button class="primary" id="send-button" type="submit">Enviar para o Zeus</button>
+            <button class="secondary" id="dictate-chat-button" data-idle-label="Ditar mensagem" type="button">Ditar mensagem</button>
+            <button class="secondary" id="research-button" type="button">Pesquisar e memorizar</button>
+            <button class="secondary" id="calendar-button" type="button">Ler calendario</button>
+            <button class="secondary" id="new-session-button" type="button">Nova sessao</button>
+            <label class="toggle"><input id="speak-replies" type="checkbox" checked>Falar respostas</label>
+          </div>
+        </form>
+      </article>
+
+      <aside class="panel">
+        <h2>Memoria recuperada do Zeus</h2>
+        <p>As notas que mais ajudaram o Zeus a responder aparecem aqui.</p>
+        <div class="memory-list" id="memory-list"></div>
+
+        <div class="hint" id="provider-hint">
+          Se o provider ainda nao estiver pronto, configure sua chave no arquivo <code>.env</code> ou use um modelo local com Ollama.
+        </div>
+
+        <form id="note-form">
+          <h2>Ensinar o Zeus</h2>
+          <input id="note-title" type="text" placeholder="Titulo da nota">
+          <select id="teach-category">
+            <option value="comando">Comando</option>
+            <option value="fala">Fala</option>
+            <option value="preferencia">Preferencia</option>
+            <option value="regra">Regra</option>
+            <option value="evolucao">Evolucao</option>
+          </select>
+          <textarea id="note-content" placeholder="Explique o que o Zeus deve guardar. Ex.: quando eu disser X, isso significa Y."></textarea>
+          <div class="actions">
+            <button class="primary" id="save-note-button" type="submit">Salvar no cerebro do Zeus</button>
+            <button class="secondary" id="dictate-teach-button" data-idle-label="Ditar ensino" type="button">Ditar ensino</button>
+          </div>
+          <div class="note-meta" id="note-feedback"></div>
+        </form>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    const state = { sessionId: null, busy: false, status: null };
+    const statusText = document.getElementById("status-text");
+    const providerName = document.getElementById("provider-name");
+    const vaultPath = document.getElementById("vault-path");
+    const noteCount = document.getElementById("note-count");
+    const chatLog = document.getElementById("chat-log");
+    const memoryList = document.getElementById("memory-list");
+    const providerHint = document.getElementById("provider-hint");
+    const sendButton = document.getElementById("send-button");
+    const researchButton = document.getElementById("research-button");
+    const calendarButton = document.getElementById("calendar-button");
+    const saveNoteButton = document.getElementById("save-note-button");
+    const dictateChatButton = document.getElementById("dictate-chat-button");
+    const dictateTeachButton = document.getElementById("dictate-teach-button");
+    const speakReplies = document.getElementById("speak-replies");
+    const noteFeedback = document.getElementById("note-feedback");
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    let activeRecognition = null;
+    let activeRecognitionButton = null;
+
+    function createLocalSessionId() {
+      if (window.crypto && window.crypto.randomUUID) return `sessao-${window.crypto.randomUUID()}`;
+      return `sessao-${Date.now()}`;
+    }
+
+    function cleanTextForVoice(text) {
+      return String(text || "")
+        .replace(/```[\s\S]*?```/g, " ")
+        .replace(/`([^`]+)`/g, "$1")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 1200);
+    }
+
+    function speakReply(text) {
+      if (!speakReplies || !speakReplies.checked) return;
+      if (!("speechSynthesis" in window)) return;
+      const cleaned = cleanTextForVoice(text);
+      if (!cleaned) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(cleaned);
+      utterance.lang = "pt-BR";
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function setDictationButton(button, listening) {
+      if (!button) return;
+      button.textContent = listening ? "Parar ditado" : button.dataset.idleLabel;
+    }
+
+    function toggleDictation(targetId, button) {
+      if (!SpeechRecognition) {
+        addBubble("system", "Ditado por voz nao esta disponivel neste navegador.");
+        return;
+      }
+
+      if (activeRecognition) {
+        activeRecognition.stop();
+        return;
+      }
+
+      const target = document.getElementById(targetId);
+      if (!target) return;
+
+      window.speechSynthesis?.cancel();
+
+      const recognition = new SpeechRecognition();
+      let committed = target.value.trim();
+
+      recognition.lang = "pt-BR";
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      activeRecognition = recognition;
+      activeRecognitionButton = button;
+      setDictationButton(button, true);
+
+      recognition.onresult = (event) => {
+        let interim = "";
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const transcript = event.results[index][0].transcript.trim();
+          if (!transcript) continue;
+          if (event.results[index].isFinal) {
+            committed = [committed, transcript].filter(Boolean).join(" ").trim();
+          } else {
+            interim = transcript;
+          }
+        }
+        target.value = [committed, interim].filter(Boolean).join(" ").trim();
+      };
+
+      recognition.onerror = () => {
+        addBubble("system", "Nao consegui iniciar o ditado por voz agora.");
+      };
+
+      recognition.onend = () => {
+        if (activeRecognition === recognition) {
+          activeRecognition = null;
+        }
+        if (activeRecognitionButton === button) {
+          activeRecognitionButton = null;
+        }
+        setDictationButton(button, false);
+      };
+
+      recognition.start();
+    }
+
+    function setBusy(isBusy) {
+      state.busy = isBusy;
+      sendButton.disabled = isBusy;
+      researchButton.disabled = isBusy;
+      calendarButton.disabled = isBusy;
+      saveNoteButton.disabled = isBusy;
+      dictateChatButton.disabled = isBusy;
+      dictateTeachButton.disabled = isBusy;
+    }
+
+    function addBubble(role, text) {
+      const bubble = document.createElement("div");
+      bubble.className = `bubble ${role}`;
+
+      const label = document.createElement("strong");
+      label.textContent = role === "user" ? "Voce" : role === "assistant" ? "Zeus" : "Sistema";
+
+      const body = document.createElement("div");
+      body.textContent = text;
+
+      bubble.appendChild(label);
+      bubble.appendChild(body);
+      chatLog.appendChild(bubble);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function renderMemoryHits(hits) {
+      memoryList.innerHTML = "";
+      if (!hits || !hits.length) {
+        const empty = document.createElement("div");
+        empty.className = "memory-item";
+        empty.innerHTML = "<strong>Nenhuma nota relevante</strong><p>A resposta foi gerada sem recuperar notas especificas do vault.</p>";
+        memoryList.appendChild(empty);
+        return;
+      }
+
+      hits.forEach((hit) => {
+        const item = document.createElement("div");
+        item.className = "memory-item";
+        item.innerHTML = `<strong>${hit.title}</strong><code>${hit.path}</code><p>${hit.snippet}</p>`;
+        memoryList.appendChild(item);
+      });
+    }
+
+    async function fetchStatus() {
+      const response = await fetch("/api/status");
+      const data = await response.json();
+      state.status = data;
+      const assistantName = data.assistant_name || "Zeus";
+      providerName.textContent = data.provider_ready ? `${assistantName} / ${data.provider} / ${data.model}` : `${assistantName} / ${data.provider} nao configurado`;
+      vaultPath.textContent = data.vault_path;
+      noteCount.textContent = String(data.note_count);
+      providerHint.style.display = data.provider_ready ? "none" : "block";
+      statusText.textContent = data.provider_ready ? `${assistantName} pronto. Tudo que voce ensinar pode virar memoria em Markdown dentro do vault.` : data.message;
+    }
+
+    async function ensureSession() {
+      const response = await fetch("/api/session", { method: "POST" });
+      const data = await response.json();
+      state.sessionId = data.session_id || createLocalSessionId();
+      return state.sessionId;
+    }
+
+    async function sendMessage(event) {
+      event.preventDefault();
+      const input = document.getElementById("chat-input");
+      const message = input.value.trim();
+      if (!message || state.busy) return;
+      if (!state.sessionId) await ensureSession();
+
+      addBubble("user", message);
+      input.value = "";
+      setBusy(true);
+      statusText.textContent = "Zeus esta consultando o vault e montando a resposta...";
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, session_id: state.sessionId }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Falha ao falar com o Zeus.");
+
+        addBubble("assistant", data.answer);
+        renderMemoryHits(data.memory_hits);
+        speakReply(data.answer);
+        statusText.textContent = `Sessao ${data.session_id} ativa. Resposta em ${data.usage.latency_ms} ms.`;
+      } catch (error) {
+        addBubble("system", error.message);
+        statusText.innerHTML = `<span class="error">${error.message}</span>`;
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function saveNote(event) {
+      event.preventDefault();
+      if (state.busy) return;
+
+      const title = document.getElementById("note-title").value.trim();
+      const category = document.getElementById("teach-category").value;
+      const content = document.getElementById("note-content").value.trim();
+
+      if (!content) {
+        noteFeedback.innerHTML = '<span class="error">Escreva algum conteudo antes de salvar.</span>';
+        return;
+      }
+
+      setBusy(true);
+      noteFeedback.textContent = "Ensinando o Zeus...";
+
+      try {
+        const response = await fetch("/api/zeus/teach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, category, content, source: "manual-ui" }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Falha ao ensinar o Zeus.");
+
+        document.getElementById("note-title").value = "";
+        document.getElementById("note-content").value = "";
+        noteFeedback.textContent = `Zeus aprendeu e registrou em ${data.target_path}`;
+        await fetchStatus();
+      } catch (error) {
+        noteFeedback.innerHTML = `<span class="error">${error.message}</span>`;
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function startNewSession() {
+      state.sessionId = null;
+      chatLog.innerHTML = "";
+      renderMemoryHits([]);
+      addBubble("system", "Nova sessao criada. A memoria permanente do Zeus continua no Obsidian.");
+      await ensureSession();
+      statusText.textContent = `Sessao ${state.sessionId} pronta para o Zeus.`;
+    }
+
+    async function researchAndMemorize() {
+      const input = document.getElementById("chat-input");
+      const message = input.value.trim();
+      if (!message || state.busy) return;
+      if (!state.sessionId) await ensureSession();
+
+      addBubble("user", `[pesquisa] ${message}`);
+      input.value = "";
+      setBusy(true);
+      statusText.textContent = "Pesquisando na web, sintetizando e gravando no Obsidian...";
+
+      try {
+        const response = await fetch("/api/research", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            session_id: state.sessionId,
+            folder: "Memoria/Pesquisas"
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Falha ao pesquisar.");
+
+        addBubble("assistant", `${data.answer}\n\nNota salva em: ${data.note_relative_path}`);
+        renderMemoryHits(data.memory_hits);
+        speakReply(data.answer);
+        await fetchStatus();
+        statusText.textContent = `Pesquisa concluida. Nota salva em ${data.note_relative_path}.`;
+      } catch (error) {
+        addBubble("system", error.message);
+        statusText.innerHTML = `<span class="error">${error.message}</span>`;
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function syncCalendar() {
+      if (state.busy) return;
+      setBusy(true);
+      statusText.textContent = "Lendo calendario e executando pesquisas agendadas...";
+
+      try {
+        const response = await fetch("/api/calendar/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Falha ao sincronizar calendario.");
+
+        const done = data.results || [];
+        if (!done.length) {
+          addBubble("system", "Calendario lido. Nenhum evento de pesquisa encontrou consulta valida para hoje.");
+          statusText.textContent = "Calendario sincronizado sem novas pesquisas.";
+        } else {
+          const lines = done.map((item) => {
+            if (item.skipped) return `- ${item.event}: ja processado`;
+            return `- ${item.event}: ${item.note_path || "pesquisa executada"}`;
+          });
+          addBubble("assistant", `Calendario sincronizado.\n\n${lines.join("\n")}`);
+          speakReply("Calendario sincronizado e pesquisas do dia processadas.");
+          await fetchStatus();
+          statusText.textContent = "Calendario sincronizado e pesquisas do dia processadas.";
+        }
+      } catch (error) {
+        addBubble("system", error.message);
+        statusText.innerHTML = `<span class="error">${error.message}</span>`;
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    document.getElementById("chat-form").addEventListener("submit", sendMessage);
+    document.getElementById("note-form").addEventListener("submit", saveNote);
+    document.getElementById("new-session-button").addEventListener("click", startNewSession);
+    document.getElementById("research-button").addEventListener("click", researchAndMemorize);
+    document.getElementById("calendar-button").addEventListener("click", syncCalendar);
+    dictateChatButton.addEventListener("click", () => toggleDictation("chat-input", dictateChatButton));
+    dictateTeachButton.addEventListener("click", () => toggleDictation("note-content", dictateTeachButton));
+
+    (async () => {
+      await fetchStatus();
+      await ensureSession();
+      renderMemoryHits([]);
+      addBubble("system", "Zeus esta pronto. Ensine comandos, falas e regras que ele deve guardar no cerebro do vault.");
+    })();
+  </script>
+</body>
+</html>

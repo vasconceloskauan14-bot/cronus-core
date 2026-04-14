@@ -1,0 +1,91 @@
+{
+  "name": "SaaS Growth Mission",
+  "objective": "Acelerar crescimento do SaaS: churn, expansão, NRR e novos leads",
+  "version": "1.0",
+  "steps": [
+    {
+      "name": "Diagnóstico SaaS",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "saas_health",
+          "agent": "SAAS",
+          "method": "health_dashboard",
+          "params": {"data": "{{saas_metrics}}"},
+          "description": "Dashboard de saúde do SaaS"
+        },
+        {
+          "id": "churn_analysis",
+          "agent": "ATENDIMENTO",
+          "method": "retention_campaign",
+          "params": {"at_risk_customers": "{{at_risk_customers}}"},
+          "description": "Análise de churn e campanha de retenção"
+        },
+        {
+          "id": "pipeline_health",
+          "agent": "CRM",
+          "method": "analyze_pipeline",
+          "params": {"data": "{{pipeline_data}}"},
+          "description": "Saúde do pipeline de vendas"
+        }
+      ]
+    },
+    {
+      "name": "Geração de Oportunidades",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "growth_levers",
+          "agent": "SAAS",
+          "method": "growth_levers",
+          "params": {"metrics": "{{saas_metrics}}"},
+          "description": "Identificação de alavancas de crescimento"
+        },
+        {
+          "id": "lead_hunting",
+          "agent": "HUNTER",
+          "method": "pipeline",
+          "params": {"icp": "{{icp}}", "limit": 30},
+          "description": "Prospecção de novos leads ICP"
+        }
+      ]
+    },
+    {
+      "name": "Execução de Conteúdo",
+      "parallel": false,
+      "tasks": [
+        {
+          "id": "content_plan",
+          "agent": "CONTENT_FACTORY",
+          "method": "monthly_content_plan",
+          "params": {"brand": "{{brand_data}}", "num_topics": 20},
+          "description": "Plano de conteúdo mensal"
+        }
+      ]
+    },
+    {
+      "name": "Decisão Estratégica",
+      "parallel": false,
+      "tasks": [
+        {
+          "id": "ceo_decision",
+          "agent": "CEO",
+          "method": "prioritize",
+          "params": {
+            "initiatives": "{{all_growth_opportunities}}",
+            "resources": "{{available_resources}}"
+          },
+          "description": "Priorização das iniciativas de crescimento"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    "saas_health_dashboard",
+    "retention_campaign",
+    "growth_levers_ranked",
+    "new_leads_pipeline",
+    "content_calendar",
+    "prioritized_initiatives"
+  ]
+}

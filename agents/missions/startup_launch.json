@@ -1,0 +1,111 @@
+{
+  "name": "Startup Launch Mission",
+  "objective": "Lançar uma startup do zero: posicionamento, GTM, produto e primeiros clientes",
+  "version": "1.0",
+  "steps": [
+    {
+      "name": "Pesquisa e Validação",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "market_research",
+          "agent": "SWARM",
+          "method": "research",
+          "params": {"query": "mercado {{industry}} Brasil oportunidades 2026", "depth": 3},
+          "description": "Pesquisa de mercado profunda"
+        },
+        {
+          "id": "competitor_landscape",
+          "agent": "SWARM",
+          "method": "research",
+          "params": {"query": "concorrentes startups {{industry}} produto", "depth": 2},
+          "description": "Mapeamento de concorrentes"
+        },
+        {
+          "id": "market_monitoring",
+          "agent": "RADAR",
+          "method": "scan_once",
+          "params": {"targets": ["{{industry}}", "startups Brasil"]},
+          "description": "Monitoramento de oportunidades"
+        }
+      ]
+    },
+    {
+      "name": "Estratégia e Posicionamento",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "brand_strategy",
+          "agent": "VISION",
+          "method": "positioning_strategy",
+          "params": {"market": "{{market_data}}", "company": "{{company_data}}"},
+          "description": "Estratégia de marca e posicionamento"
+        },
+        {
+          "id": "moat_design",
+          "agent": "MOAT",
+          "method": "build_moat_strategy",
+          "params": {"company": "{{company_data}}", "timeframe": "12 meses"},
+          "description": "Design de vantagem competitiva"
+        },
+        {
+          "id": "innovation_product",
+          "agent": "INNOVATION",
+          "method": "ideation_sprint",
+          "params": {"context": "{{company_data}}", "challenge": "criar produto diferenciado para {{industry}}"},
+          "description": "Sprint de ideação de produto"
+        }
+      ]
+    },
+    {
+      "name": "Go-to-Market",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "lead_gen",
+          "agent": "HUNTER",
+          "method": "pipeline",
+          "params": {"icp": "{{icp}}", "limit": 50},
+          "description": "Geração de primeiros leads"
+        },
+        {
+          "id": "content_launch",
+          "agent": "CONTENT_FACTORY",
+          "method": "full_content_pack",
+          "params": {"topic": "{{value_proposition}}", "brand": "{{brand_data}}"},
+          "description": "Pack de conteúdo de lançamento"
+        }
+      ]
+    },
+    {
+      "name": "Estratégia Financeira",
+      "parallel": false,
+      "tasks": [
+        {
+          "id": "financial_plan",
+          "agent": "CAPITAL",
+          "method": "runway_analysis",
+          "params": {"cash_data": "{{financial_data}}"},
+          "description": "Análise de runway e planejamento financeiro"
+        },
+        {
+          "id": "ceo_decision",
+          "agent": "CEO",
+          "method": "strategic_plan",
+          "params": {"company": "{{company_data}}", "horizon_months": 12},
+          "description": "Plano estratégico de 12 meses"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    "market_research_report",
+    "brand_positioning",
+    "moat_strategy",
+    "product_ideation",
+    "first_50_leads",
+    "content_launch_pack",
+    "financial_runway_plan",
+    "strategic_plan_12m"
+  ]
+}

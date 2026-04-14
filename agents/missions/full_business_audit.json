@@ -1,0 +1,90 @@
+{
+  "name": "Full Business Audit",
+  "objective": "Auditoria completa do negócio: financeiro, mercado, marca e operações",
+  "version": "1.0",
+  "steps": [
+    {
+      "name": "Coleta de Inteligência",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "market_scan",
+          "agent": "RADAR",
+          "method": "scan_once",
+          "params": {"targets": ["{{company_name}}", "{{industry}}", "concorrentes"]},
+          "description": "Monitoramento de mercado em tempo real"
+        },
+        {
+          "id": "market_research",
+          "agent": "SWARM",
+          "method": "research",
+          "params": {"query": "análise mercado {{industry}} Brasil 2026", "depth": 3},
+          "description": "Pesquisa profunda de mercado"
+        },
+        {
+          "id": "competitor_research",
+          "agent": "SWARM",
+          "method": "research",
+          "params": {"query": "principais concorrentes {{company_name}} estratégias", "depth": 2},
+          "description": "Inteligência competitiva"
+        }
+      ]
+    },
+    {
+      "name": "Análise Estratégica",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "financial_health",
+          "agent": "CAPITAL",
+          "method": "health_check",
+          "params": {"data": "{{financial_data}}"},
+          "description": "Saúde financeira"
+        },
+        {
+          "id": "moat_analysis",
+          "agent": "MOAT",
+          "method": "competitive_score",
+          "params": {"company": "{{company_data}}"},
+          "description": "Score de vantagem competitiva"
+        },
+        {
+          "id": "brand_audit",
+          "agent": "VISION",
+          "method": "brand_audit",
+          "params": {"brand": "{{brand_data}}"},
+          "description": "Auditoria de marca"
+        }
+      ]
+    },
+    {
+      "name": "Síntese e Estratégia",
+      "parallel": false,
+      "tasks": [
+        {
+          "id": "analyst_synthesis",
+          "agent": "ANALYST",
+          "method": "generate_report",
+          "params": {
+            "metrics": "{{all_results}}",
+            "period": "Auditoria Completa {{current_date}}"
+          },
+          "description": "Síntese analítica completa"
+        },
+        {
+          "id": "ceo_strategic_plan",
+          "agent": "CEO",
+          "method": "strategic_plan",
+          "params": {"company": "{{company_data}}", "horizon_months": 12},
+          "description": "Plano estratégico 12 meses"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    "financial_health_report",
+    "competitive_intelligence_report",
+    "brand_audit_report",
+    "strategic_plan_12m"
+  ]
+}

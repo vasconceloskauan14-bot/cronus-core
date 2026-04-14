@@ -1,0 +1,60 @@
+{
+  "global": {
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 8096,
+    "max_retries": 3,
+    "retry_delay_seconds": 2,
+    "timeout_seconds": 120,
+    "log_level": "INFO",
+    "max_parallel_agents": 6
+  },
+  "paths": {
+    "state_dir": "agents/state",
+    "output_dir": "agents/output",
+    "results_dir": "agents/results",
+    "reports_dir": "agents/reports",
+    "logs_dir": "agents/logs",
+    "missions_dir": "agents/missions",
+    "config_dir": "agents/config"
+  },
+  "agents": {
+    "swarm": {
+      "default_depth": 3,
+      "default_parallel": 8,
+      "max_results_per_query": 20,
+      "output_prefix": "swarm"
+    },
+    "radar": {
+      "default_interval_minutes": 60,
+      "alert_threshold_change_pct": 20,
+      "state_file": "radar_state.json",
+      "report_prefix": "radar"
+    },
+    "hunter": {
+      "default_limit": 50,
+      "min_score_to_qualify": 60,
+      "min_score_for_outreach": 70,
+      "pipeline_enrich_top_n": 3,
+      "output_prefix": "hunt"
+    },
+    "analyst": {
+      "max_data_rows": 200,
+      "max_data_chars": 6000,
+      "forecast_default_periods": 30,
+      "report_prefix": "bi_report"
+    },
+    "scribe": {
+      "default_variations": 5,
+      "default_email_steps": 5,
+      "default_social_count": 10,
+      "default_blog_words": 1500,
+      "output_prefix": "scribe"
+    }
+  },
+  "notifications": {
+    "slack_enabled": false,
+    "slack_webhook_env": "SLACK_WEBHOOK_URL",
+    "notify_on_completion": true,
+    "notify_on_error": true
+  }
+}

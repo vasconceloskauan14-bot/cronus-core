@@ -1,0 +1,81 @@
+{
+  "name": "Content Domination Mission",
+  "objective": "Dominar o conteúdo orgânico: SEO, social, email e thought leadership",
+  "version": "1.0",
+  "steps": [
+    {
+      "name": "Inteligência de Conteúdo",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "keyword_research",
+          "agent": "SEO",
+          "method": "keyword_research",
+          "params": {"niche": "{{industry}}", "country": "BR"},
+          "description": "Pesquisa de keywords"
+        },
+        {
+          "id": "competitor_content",
+          "agent": "SWARM",
+          "method": "research",
+          "params": {"query": "melhores conteúdos {{industry}} Brasil 2026", "depth": 2},
+          "description": "Mapeamento de conteúdo dos concorrentes"
+        },
+        {
+          "id": "audience_research",
+          "agent": "SWARM",
+          "method": "research",
+          "params": {"query": "dores e perguntas de {{icp}} sobre {{industry}}", "depth": 2},
+          "description": "Pesquisa de dores da audiência"
+        }
+      ]
+    },
+    {
+      "name": "Produção em Escala",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "seo_cluster",
+          "agent": "CONTENT_FACTORY",
+          "method": "seo_cluster",
+          "params": {"keyword": "{{main_keyword}}", "num_articles": 10},
+          "description": "Cluster de SEO (pillar + 9 artigos de suporte)"
+        },
+        {
+          "id": "social_calendar",
+          "agent": "SOCIAL_MEDIA",
+          "method": "content_calendar",
+          "params": {"brand": "{{brand_data}}", "month": "{{current_month}}"},
+          "description": "Calendário social do mês"
+        },
+        {
+          "id": "email_nurture",
+          "agent": "EMAIL",
+          "method": "nurture_sequence",
+          "params": {"icp": "{{icp}}", "product": "{{product_data}}", "steps": 7},
+          "description": "Sequência de nutrição de 7 emails"
+        }
+      ]
+    },
+    {
+      "name": "Distribuição e Amplificação",
+      "parallel": false,
+      "tasks": [
+        {
+          "id": "viral_hooks",
+          "agent": "SOCIAL_MEDIA",
+          "method": "viral_hooks",
+          "params": {"product": "{{product_data}}", "count": 20},
+          "description": "20 ganchos virais para amplificação"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    "keyword_strategy",
+    "seo_content_cluster_10_articles",
+    "social_calendar_30_days",
+    "email_nurture_7_emails",
+    "20_viral_hooks"
+  ]
+}

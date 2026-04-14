@@ -1,0 +1,40 @@
+{
+  "nome": "ICP NovaRH",
+  "descricao": "Perfil do cliente ideal para o NovaRH",
+  "empresa": {
+    "porte": "PME",
+    "funcionarios": {"min": 50, "max": 500},
+    "faturamento_anual_reais": {"min": 5000000, "max": 100000000},
+    "segmentos": ["varejo", "serviços", "indústria leve", "saúde", "educação"],
+    "localizacao": ["São Paulo", "Rio de Janeiro", "Belo Horizonte", "Curitiba", "Porto Alegre"],
+    "regime_tributario": ["Lucro Presumido", "Lucro Real"],
+    "tecnologia": "usa algum software de gestão (básico ou legado)"
+  },
+  "decisor": {
+    "cargo": ["CEO", "Diretor de RH", "Gerente de Pessoas", "CFO"],
+    "dores": [
+      "folha de ponto manual ou em planilha Excel",
+      "processos de RH fragmentados",
+      "dificuldade de compliance trabalhista",
+      "alto turnover sem visibilidade das causas",
+      "onboarding lento e ineficiente"
+    ],
+    "motivadores_compra": [
+      "reduzir horas gastas em RH operacional",
+      "evitar multas trabalhistas",
+      "escalar a equipe com mais controle"
+    ]
+  },
+  "sinais_compra": [
+    "abriu vaga de analista de RH recentemente",
+    "empresa cresceu mais de 20% no último ano",
+    "mencionou problemas com eSocial ou ponto eletrônico",
+    "usa sistemas antigos como Senior ou ADP para empresas grandes"
+  ],
+  "nao_cliente": [
+    "menos de 30 funcionários",
+    "empresas familiares sem estrutura de RH",
+    "setor público",
+    "já usa software moderno e está satisfeito"
+  ]
+}

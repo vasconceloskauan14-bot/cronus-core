@@ -1,0 +1,194 @@
+{
+  "main": {
+    "id": "0c38a93e64efe7aa",
+    "type": "split",
+    "children": [
+      {
+        "id": "df18adf5f1c37f1c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ceaabd44e94550af",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Visualização em gráfico"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "7733ccd165ae6ab5",
+    "type": "split",
+    "children": [
+      {
+        "id": "dcc369ffa52b2e5e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "583efb7a85cd0be4",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de arquivos"
+            }
+          },
+          {
+            "id": "a51d6d1724485948",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Procurar"
+            }
+          },
+          {
+            "id": "68dbd2e3f9c2f6f3",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "e0da10387ce43e10",
+    "type": "split",
+    "children": [
+      {
+        "id": "22405055431860b3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f2d709951acc47ec",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Links inversos"
+            }
+          },
+          {
+            "id": "c6986cb73bcf0e57",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Links de saída"
+            }
+          },
+          {
+            "id": "11aa260a2d38e8b3",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiquetas"
+            }
+          },
+          {
+            "id": "e40a333f67338930",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Todas as propriedades"
+            }
+          },
+          {
+            "id": "525ca261b22353f5",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Sumário"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir a troca rápida": false,
+      "graph:Abrir visualização em gráfico": false,
+      "canvas:Criar novo canvas": false,
+      "daily-notes:Abrir a nota de hoje": false,
+      "templates:Inserir modelo": false,
+      "command-palette:Abrir paleta de comandos": false,
+      "bases:Criar nova base": false
+    }
+  },
+  "active": "ceaabd44e94550af",
+  "lastOpenFiles": [
+    "Sem título 3.base",
+    "OBSIDIAN_AI.md",
+    "Sem título 2.base",
+    "Sem título 1.base",
+    "obsidian-ai-vault/Memoria/Fatos Importantes.md",
+    "Sem título.base",
+    "automation/__pycache__/obsidian_calendar_worker.cpython-314.pyc",
+    "automation/__pycache__/obsidian_calendar_sync.cpython-314.pyc",
+    "OBSIDIAN_CALENDARIO.md",
+    "data/pesquisas_agendadas.ics",
+    "automation/obsidian_calendar_worker.py",
+    "automation/obsidian_calendar_sync.py",
+    "obsidian-ai-vault/Inbox/Como usar.md"
+  ]
+}

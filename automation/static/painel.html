@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRONUS — Painel de Pesquisas</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; padding: 24px; }
+  h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 28px; }
+  .status-bar { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .status-pill { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 20px; padding: 6px 14px; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+  .dot.off { background: #ef4444; animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .card h2 { font-size: 14px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px; }
+
+  .search-row { display: flex; gap: 10px; }
+  .search-row input { flex: 1; background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 14px; outline: none; }
+  .search-row input:focus { border-color: #6366f1; }
+  .btn { background: #6366f1; color: #fff; border: none; border-radius: 8px; padding: 12px 20px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .2s; }
+  .btn:hover { background: #4f46e5; }
+  .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+  .btn.danger { background: #dc2626; }
+  .btn.danger:hover { background: #b91c1c; }
+  .btn.sm { padding: 6px 12px; font-size: 12px; }
+  .btn.secondary { background: #2a2a2a; color: #aaa; }
+  .btn.secondary:hover { background: #333; color: #fff; }
+
+  #answer-box { margin-top: 14px; background: #111; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.7; color: #ccc; display: none; white-space: pre-wrap; }
+  .note-saved { font-size: 12px; color: #22c55e; margin-top: 8px; display: none; }
+
+  .topic-list { display: flex; flex-direction: column; gap: 10px; }
+  .topic-item { background: #111; border: 1px solid #2a2a2a; border-radius: 10px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; }
+  .topic-item .toggle { width: 36px; height: 20px; background: #333; border-radius: 10px; cursor: pointer; flex-shrink: 0; margin-top: 2px; position: relative; transition: background .2s; }
+  .topic-item .toggle.on { background: #6366f1; }
+  .topic-item .toggle::after { content: ''; position: absolute; width: 14px; height: 14px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
+  .topic-item .toggle.on::after { left: 19px; }
+  .topic-info { flex: 1; }
+  .topic-name { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .topic-query { font-size: 12px; color: #666; margin-bottom: 6px; }
+  .topic-meta { display: flex; gap: 10px; font-size: 11px; color: #555; }
+  .badge { background: #1f2937; border-radius: 4px; padding: 2px 8px; color: #9ca3af; }
+  .topic-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; color: #888; font-weight: 500; }
+  input, textarea, select { background: #111; border: 1px solid #333; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; outline: none; font-family: inherit; resize: vertical; }
+  input:focus, textarea:focus { border-color: #6366f1; }
+  textarea { min-height: 70px; }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff3; border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none; align-items: center; justify-content: center; z-index: 100; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #1a1a1a; border: 1px solid #333; border-radius: 14px; padding: 24px; width: 540px; max-width: 95vw; }
+  .modal h3 { font-size: 16px; margin-bottom: 18px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+</style>
+</head>
+<body>
+
+<h1>CRONUS — Painel de Pesquisas</h1>
+<p class="subtitle">Gerencie as pesquisas e envie perguntas direto para o Obsidian</p>
+
+<div class="status-bar">
+  <div class="status-pill"><div class="dot" id="srv-dot"></div><span id="srv-txt">Verificando...</span></div>
+  <div class="status-pill"><div class="dot" id="ai-dot" style="background:#6366f1;animation:none"></div><span id="ai-model">--</span></div>
+  <div class="status-pill">📓 <span id="note-count">-- notas</span></div>
+</div>
+
+<div class="card">
+  <h2>Pesquisa rápida</h2>
+  <div class="search-row">
+    <input type="text" id="query-input" placeholder="Ex: qual o valor médio cobrado por edição de reels em 2025?" />
+    <button class="btn" id="btn-search" onclick="sendResearch()">Pesquisar</button>
+  </div>
+  <div id="answer-box"></div>
+  <div class="note-saved" id="note-saved">✅ Nota salva no Obsidian</div>
+</div>
+
+<div class="card">
+  <h2>Tópicos do radar 24h</h2>
+  <div class="topic-list" id="topic-list">
+    <div style="color:#555;font-size:13px">Carregando tópicos...</div>
+  </div>
+  <button class="btn secondary sm" style="margin-top:14px" onclick="openAddModal()">+ Adicionar tópico</button>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Novo tópico de pesquisa</h3>
+    <input type="hidden" id="edit-index" value="-1">
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Nome do tópico</label>
+        <input type="text" id="f-name" placeholder="Ex: Demanda por editores de reels">
+      </div>
+      <div class="form-group full">
+        <label>Query de busca</label>
+        <input type="text" id="f-query" placeholder="Ex: reel editor demand freelancer 2025 pricing">
+      </div>
+      <div class="form-group full">
+        <label>Direção editorial (o que você quer descobrir)</label>
+        <textarea id="f-notes" placeholder="Ex: Descobrir quais preços estão sendo praticados."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Repetir a cada (horas)</label>
+        <input type="number" id="f-cadence" value="1" min="0" max="168" step="0.1">
+      </div>
+      <div class="form-group">
+        <label>Pasta no Obsidian</label>
+        <input type="text" id="f-folder" placeholder="Memoria/Radar/meu-topico">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveTopic()">Salvar tópico</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';  // mesmo origem — sem prefixo
+
+async function sendResearch() {
+  const q = document.getElementById('query-input').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('btn-search');
+  const box = document.getElementById('answer-box');
+  const saved = document.getElementById('note-saved');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Pesquisando...';
+  box.style.display = 'none';
+  saved.style.display = 'none';
+  try {
+    const r = await fetch('/api/research', {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify({message: q})
+    });
+    const d = await r.json();
+    if (d.ok) {
+      box.style.display = 'block';
+      box.textContent = d.answer;
+      saved.style.display = 'block';
+      checkStatus();
+    } else {
+      box.style.display = 'block';
+      box.textContent = '❌ Erro: ' + d.error;
+    }
+  } catch (e) {
+    box.style.display = 'block';
+    box.textContent = '❌ Erro ao conectar com o servidor.';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Pesquisar';
+}
+
+document.getElementById('query-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendResearch();
+});
+
+let radarConfig = null;
+
+async function loadTopics() {
+  try {
+    const r = await fetch('/api/radar/config');
+    if (r.ok) radarConfig = await r.json();
+  } catch {}
+  renderTopics();
+}
+
+function renderTopics() {
+  const list = document.getElementById('topic-list');
+  const topics = radarConfig?.topics || [];
+  if (!topics.length) {
+    list.innerHTML = '<div style="color:#555;font-size:13px">Nenhum tópico configurado ainda.</div>';
+    return;
+  }
+  list.innerHTML = topics.map((t, i) => `
+    <div class="topic-item">
+      <div class="toggle ${t.enabled !== false ? 'on' : ''}" onclick="toggleTopic(${i})" title="Ativar/desativar"></div>
+      <div class="topic-info">
+        <div class="topic-name">${t.name}</div>
+        <div class="topic-query">${t.query}</div>
+        <div class="topic-meta">
+          <span class="badge">a cada ${t.cadence_hours || 0}h</span>
+          <span class="badge">${t.folder || 'Memoria/Radar'}</span>
+        </div>
+      </div>
+      <div class="topic-actions">
+        <button class="btn secondary sm" onclick="editTopic(${i})">Editar</button>
+        <button class="btn danger sm" onclick="deleteTopic(${i})">Remover</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleTopic(i) {
+  radarConfig.topics[i].enabled = !radarConfig.topics[i].enabled;
+  renderTopics();
+  saveConfig();
+}
+
+function deleteTopic(i) {
+  if (!confirm(`Remover "${radarConfig.topics[i].name}"?`)) return;
+  radarConfig.topics.splice(i, 1);
+  renderTopics();
+  saveConfig();
+}
+
+function openAddModal() {
+  document.getElementById('modal-title').textContent = 'Novo tópico de pesquisa';
+  document.getElementById('edit-index').value = '-1';
+  ['f-name','f-query','f-notes','f-folder'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-cadence').value = '0';
+  document.getElementById('modal').classList.add('open');
+}
+
+function editTopic(i) {
+  const t = radarConfig.topics[i];
+  document.getElementById('modal-title').textContent = 'Editar tópico';
+  document.getElementById('edit-index').value = i;
+  document.getElementById('f-name').value = t.name || '';
+  document.getElementById('f-query').value = t.query || '';
+  document.getElementById('f-notes').value = t.notes || '';
+  document.getElementById('f-cadence').value = t.cadence_hours ?? 0;
+  document.getElementById('f-folder').value = t.folder || '';
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function saveTopic() {
+  const name = document.getElementById('f-name').value.trim();
+  const query = document.getElementById('f-query').value.trim();
+  if (!name || !query) { alert('Nome e query são obrigatórios.'); return; }
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const topic = {
+    name, query,
+    notes: document.getElementById('f-notes').value.trim(),
+    cadence_hours: parseFloat(document.getElementById('f-cadence').value) || 0,
+    folder: document.getElementById('f-folder').value.trim() || `Memoria/Radar/${slug}`,
+    priority: 8,
+    enabled: true,
+  };
+  const idx = parseInt(document.getElementById('edit-index').value);
+  if (idx >= 0) radarConfig.topics[idx] = topic;
+  else radarConfig.topics.push(topic);
+  closeModal();
+  renderTopics();
+  saveConfig();
+}
+
+async function saveConfig() {
+  try {
+    await fetch('/api/radar/config', {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify(radarConfig)
+    });
+  } catch(e) {
+    alert('Erro ao salvar configuração.');
+  }
+}
+
+async function checkStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    document.getElementById('srv-dot').className = 'dot';
+    document.getElementById('srv-txt').textContent = 'Online';
+    document.getElementById('ai-model').textContent = `${d.provider} / ${d.model}`;
+    document.getElementById('note-count').textContent = `${d.note_count} notas`;
+    loadTopics();
+  } catch {
+    document.getElementById('srv-dot').className = 'dot off';
+    document.getElementById('srv-txt').textContent = 'Offline';
+  }
+}
+
+checkStatus();
+setInterval(checkStatus, 8000);
+</script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+{
+  "enabled": true,
+  "loop_minutes": 30,
+  "max_topics_per_cycle": 2,
+  "max_results_per_topic": 8,
+  "deep_research_minutes": 8,
+  "topic_default_cadence_hours": 2,
+  "topics": [
+    {
+      "name": "Demanda por editores",
+      "query": "video editor jobs demand reel editor short form editor UGC editor VSL editor hiring trends",
+      "notes": "Descobrir quais perfis de editores estao sendo mais procurados, em quais plataformas, para quais formatos, e quais dores aparecem com mais frequencia.",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/Demanda-por-editores",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "Tipos de edicao mais procurados",
+      "query": "most requested video editing services reels shorts tiktok youtube ads podcast editing demand",
+      "notes": "Mapear quais tipos de edicao tem mais procura: reels, shorts, anuncios, VSL, podcast, long form, cortes, motion, thumbnails, conteudo para infoproduto e ecommerce.",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/Tipos-de-edicao-mais-procurados",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "Nichos que mais precisam de edicao",
+      "query": "businesses hiring video editors real estate ecommerce infoproduct agencies creators podcasts demand",
+      "notes": "Encontrar quais nichos mais contratam edicao: infoprodutos, creators, ecommerce, imobiliario, podcasts, agencias, clinicas, SaaS e negocios locais.",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/Nichos-que-mais-precisam-de-edicao",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "Faixas de preco e pacotes de edicao",
+      "query": "video editing pricing packages reels shorts youtube editor freelancer rates agency packages",
+      "notes": "Identificar como o mercado empacota servicos de edicao, cobranca por video, por pacote, por mes, e quais ofertas parecem vender melhor.",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/Faixas-de-preco-e-pacotes-de-edicao",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "qual o nicho no ramo de edição que mais esta crescendo em 2026",
+      "query": "video foto audio motion desing ia vsl animation",
+      "notes": "eu quero saber qual e o nicho no ramo de editor que mais esta subindo no brasil quero saber as porcentagem e as probabilidade daquele nicho subir então quero que vc me pesquise sempre qual e o nicho que mais esta sundo",
+      "cadence_hours": 0,
+      "folder": "probabilisticas",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "faça sempre porcentagens das pesquisas tipo quantos % subiu a procura de ediotores de video,foto,audio,motion,deseing,reeals,tiktok,instagram,youtube e animadores e tambem ia",
+      "query": "qual e a porcentagem probalistica de cada pesquisa se ela sobe ou se ela desce",
+      "notes": "qual a porcentagem de editores mais procurados",
+      "cadence_hours": 30,
+      "folder": "Memoria/Radar/fa-a-sempre-porcentagens-das-pesquisas-tipo-quantos-subiu-a-procura-de-ediotores-de-video-foto-audio-motion-deseing-reeals-tiktok-instagram-youtube-e-animadores-e-tambem-ia",
+      "priority": 8,
+      "enabled": true
+    }
+  ]
+}

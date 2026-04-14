@@ -1,0 +1,53 @@
+{
+  "name": "HR Excellence Mission",
+  "objective": "Construir uma operação de People & Culture de classe mundial",
+  "version": "1.0",
+  "steps": [
+    {
+      "name": "Diagnóstico de Pessoas",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "culture_pulse",
+          "agent": "HR",
+          "method": "culture_pulse",
+          "params": {"survey": "{{survey_data}}"},
+          "description": "Pulso de cultura e clima"
+        },
+        {
+          "id": "performance_cycle",
+          "agent": "HR",
+          "method": "performance_review",
+          "params": {"reviews": "{{performance_data}}"},
+          "description": "Análise do ciclo de performance"
+        },
+        {
+          "id": "compensation_check",
+          "agent": "HR",
+          "method": "compensation_analysis",
+          "params": {"market": "{{market_salaries}}", "team": "{{team_data}}"},
+          "description": "Análise de remuneração vs mercado"
+        }
+      ]
+    },
+    {
+      "name": "Planejamento Estratégico de Pessoas",
+      "parallel": false,
+      "tasks": [
+        {
+          "id": "workforce_plan",
+          "agent": "HR",
+          "method": "workforce_planning",
+          "params": {"company": "{{company_data}}", "goals": "{{strategic_goals}}"},
+          "description": "Plano estratégico de workforce"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    "culture_eNPS_report",
+    "performance_insights",
+    "compensation_gaps",
+    "hiring_roadmap_12m"
+  ]
+}

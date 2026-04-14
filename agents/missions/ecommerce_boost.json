@@ -1,0 +1,82 @@
+{
+  "name": "E-commerce Revenue Boost",
+  "objective": "Aumentar faturamento do e-commerce: conversão, recuperação de carrinhos e recompra",
+  "version": "1.0",
+  "steps": [
+    {
+      "name": "Diagnóstico E-commerce",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "ecomm_health",
+          "agent": "ECOMMERCE",
+          "method": "health_dashboard",
+          "params": {"data": "{{ecommerce_data}}"},
+          "description": "Dashboard de saúde do e-commerce"
+        },
+        {
+          "id": "funnel_analysis",
+          "agent": "FUNIS",
+          "method": "analyze_funnel",
+          "params": {"data": "{{funnel_data}}"},
+          "description": "Análise de funil de conversão"
+        }
+      ]
+    },
+    {
+      "name": "Campanhas de Receita",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "cart_recovery",
+          "agent": "ECOMMERCE",
+          "method": "cart_recovery",
+          "params": {"abandoned_carts": "{{abandoned_carts}}"},
+          "description": "Campanha de recuperação de carrinhos"
+        },
+        {
+          "id": "reorder_campaign",
+          "agent": "ECOMMERCE",
+          "method": "reorder_campaign",
+          "params": {"customers": "{{customers}}", "catalog": "{{catalog}}"},
+          "description": "Campanha de recompra personalizada"
+        },
+        {
+          "id": "upsell_strategy",
+          "agent": "FUNIS",
+          "method": "generate_upsell",
+          "params": {"customer": "{{best_customers}}", "catalog": "{{catalog}}"},
+          "description": "Estratégia de upsell"
+        }
+      ]
+    },
+    {
+      "name": "Conteúdo e Anúncios",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "ad_creatives",
+          "agent": "SCRIBE",
+          "method": "generate_ad_creatives",
+          "params": {"product": "{{top_products}}", "audience": "{{icp}}", "budget_level": "medium"},
+          "description": "Criativos de anúncios"
+        },
+        {
+          "id": "seo_cluster",
+          "agent": "CONTENT_FACTORY",
+          "method": "seo_cluster",
+          "params": {"keyword": "{{main_keyword}}", "num_articles": 8},
+          "description": "Cluster de SEO para tráfego orgânico"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    "ecommerce_health_report",
+    "funnel_optimization_plan",
+    "cart_recovery_emails",
+    "reorder_campaign",
+    "ad_creatives",
+    "seo_content_cluster"
+  ]
+}

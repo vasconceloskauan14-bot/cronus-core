@@ -1,0 +1,101 @@
+{
+  "name": "Revenue Growth 3x em 90 Dias",
+  "objective": "Triplicar a receita usando pesquisa massiva, análise de dados, prospecção e geração de conteúdo em paralelo",
+  "success_criteria": {
+    "leads_qualificados": 100,
+    "emails_gerados": 500,
+    "artigos_blog": 10,
+    "relatorios_analytics": 4
+  },
+  "steps": [
+    {
+      "name": "Pesquisa e Inteligência de Mercado",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "swarm_competitors",
+          "agent": "swarm",
+          "method": "research",
+          "params": {
+            "query": "melhores estratégias de growth para SaaS B2B em 2026",
+            "depth": 3,
+            "parallel": 8
+          }
+        },
+        {
+          "id": "radar_market",
+          "agent": "radar",
+          "method": "scan",
+          "params": {
+            "targets": ["concorrentes principais", "tendências do setor", "mudanças regulatórias"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Análise e Qualificação",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "analyst_opportunity",
+          "agent": "analyst",
+          "method": "analyze",
+          "params": {
+            "data_source": "data/metrics.json",
+            "question": "Quais segmentos de clientes têm maior LTV e menor CAC? Onde está a maior oportunidade de crescimento?"
+          }
+        },
+        {
+          "id": "hunter_leads",
+          "agent": "hunter",
+          "method": "hunt",
+          "params": {
+            "icp": {
+              "setor": "SaaS B2B",
+              "tamanho": "50-500 funcionários",
+              "cargo_decisor": "CEO, CTO, Head of Growth",
+              "dores": ["escalar time sem contratar", "automatizar processos repetitivos", "reduzir CAC"],
+              "budget_estimado": "R$5.000-50.000/mês"
+            },
+            "sources": ["LinkedIn", "Crunchbase", "Product Hunt"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Geração de Conteúdo e Outreach",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "scribe_emails",
+          "agent": "scribe",
+          "method": "write_email_sequence",
+          "params": {
+            "goal": "converter leads qualificados em clientes pagantes do plano Enterprise",
+            "steps": 7
+          }
+        },
+        {
+          "id": "scribe_content",
+          "agent": "scribe",
+          "method": "create_social_posts",
+          "params": {
+            "topic": "como triplicar revenue usando IA sem contratar mais pessoas",
+            "platforms": ["linkedin", "twitter"],
+            "count": 20
+          }
+        },
+        {
+          "id": "scribe_ads",
+          "agent": "scribe",
+          "method": "generate_ad_creatives",
+          "params": {
+            "product": "Plataforma de automação empresarial com IA",
+            "audience": "CEOs e CTOs de SaaS B2B com 50-500 funcionários",
+            "budget_level": "alto"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+# Segredos
+.env
+*.env
+
+# Cache Python
+.uv-cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Vault Obsidian local (não sobe pro GitHub)
+obsidian-ai-vault/
+
+# Estado local
+state/
+
+# Logs
+*.log
+agents/logs/
+agents/output/
+automation/reports/
+
+# OS
+.DS_Store
+Thumbs.db

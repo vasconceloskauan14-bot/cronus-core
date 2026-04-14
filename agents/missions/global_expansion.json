@@ -1,0 +1,82 @@
+{
+  "name": "Global Expansion Mission",
+  "objective": "Planejar e executar expansão internacional em novo mercado",
+  "version": "1.0",
+  "steps": [
+    {
+      "name": "Inteligência de Mercado Global",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "market_entry",
+          "agent": "GLOBAL",
+          "method": "market_entry_strategy",
+          "params": {"company": "{{company_data}}", "target_market": "{{target_market}}"},
+          "description": "Estratégia de entrada no mercado alvo"
+        },
+        {
+          "id": "competitor_map",
+          "agent": "GLOBAL",
+          "method": "competitor_map",
+          "params": {"industry": "{{industry}}", "regions": ["{{target_market}}", "US", "EU"]},
+          "description": "Mapeamento competitivo global"
+        },
+        {
+          "id": "regulatory_check",
+          "agent": "GLOBAL",
+          "method": "regulatory_analysis",
+          "params": {"product": "{{product_data}}", "countries": ["{{target_market}}"]},
+          "description": "Análise regulatória"
+        }
+      ]
+    },
+    {
+      "name": "Estratégia de Marca e Conteúdo",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "positioning_global",
+          "agent": "VISION",
+          "method": "positioning_strategy",
+          "params": {"market": "{{market_data}}", "company": "{{company_data}}"},
+          "description": "Posicionamento para mercado global"
+        },
+        {
+          "id": "content_localization",
+          "agent": "GLOBAL",
+          "method": "localize_content",
+          "params": {"content": "{{main_content}}", "target_lang": "{{target_lang}}", "market": "{{target_market}}"},
+          "description": "Localização de conteúdo"
+        }
+      ]
+    },
+    {
+      "name": "Plano de Execução",
+      "parallel": false,
+      "tasks": [
+        {
+          "id": "global_gtm",
+          "agent": "GLOBAL",
+          "method": "global_gtm",
+          "params": {"company": "{{company_data}}", "markets": "{{all_target_markets}}"},
+          "description": "Go-to-market global consolidado"
+        },
+        {
+          "id": "financial_projection",
+          "agent": "CAPITAL",
+          "method": "financial_forecast",
+          "params": {"data": "{{financial_data}}", "months": 18},
+          "description": "Projeção financeira da expansão"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    "market_entry_strategy",
+    "regulatory_compliance_plan",
+    "global_brand_positioning",
+    "localized_content",
+    "gtm_playbook",
+    "expansion_financial_model"
+  ]
+}

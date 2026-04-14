@@ -1,0 +1,82 @@
+{
+  "mcp_servers": [
+    {
+      "name": "obsidian-brain-local",
+      "package": "local-python",
+      "install": "uv run --no-project --with-requirements requirements.txt automation/obsidian_brain_mcp.py",
+      "description": "Cerebro Obsidian local com busca, plano e action runner",
+      "use_cases": ["qualquer IA consulta o vault", "qualquer IA lista acoes disponiveis", "planejar e executar automacoes controladas", "registrar resultado de volta no Obsidian"],
+      "required_env": [],
+      "status": "pronto"
+    },
+    {
+      "name": "filesystem",
+      "package": "@modelcontextprotocol/server-filesystem",
+      "install": "npx -y @modelcontextprotocol/server-filesystem .",
+      "description": "Acesso seguro a arquivos e pastas do projeto",
+      "use_cases": ["ler notas do Obsidian", "salvar relatórios", "listar arquivos do vault"],
+      "required_env": [],
+      "status": "pronto"
+    },
+    {
+      "name": "fetch",
+      "package": "@modelcontextprotocol/server-fetch",
+      "install": "npx -y @modelcontextprotocol/server-fetch",
+      "description": "Web fetching — acessa URLs e faz scraping",
+      "use_cases": ["SWARM pesquisa web", "RADAR monitora sites de concorrentes", "coleta dados públicos"],
+      "required_env": [],
+      "status": "pronto"
+    },
+    {
+      "name": "github",
+      "package": "@modelcontextprotocol/server-github",
+      "install": "npx -y @modelcontextprotocol/server-github",
+      "description": "Integração completa com GitHub",
+      "use_cases": ["code review automático de PRs", "criar issues", "ler commits", "analisar codebase"],
+      "required_env": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      "status": "requer_configuracao"
+    },
+    {
+      "name": "postgres",
+      "package": "@modelcontextprotocol/server-postgres",
+      "install": "npx -y @modelcontextprotocol/server-postgres $DATABASE_URL",
+      "description": "Acesso direto ao banco de dados PostgreSQL",
+      "use_cases": ["ANALYST consulta dados", "gerar relatórios de negócio", "detectar anomalias em dados"],
+      "required_env": ["DATABASE_URL"],
+      "status": "requer_configuracao"
+    },
+    {
+      "name": "brave-search",
+      "package": "@modelcontextprotocol/server-brave-search",
+      "install": "npx -y @modelcontextprotocol/server-brave-search",
+      "description": "Busca web via Brave Search API",
+      "use_cases": ["SWARM pesquisa massiva", "RADAR monitora menções", "inteligência competitiva"],
+      "required_env": ["BRAVE_API_KEY"],
+      "status": "requer_configuracao"
+    },
+    {
+      "name": "slack",
+      "package": "@modelcontextprotocol/server-slack",
+      "install": "npx -y @modelcontextprotocol/server-slack",
+      "description": "Integração com Slack — leitura e envio de mensagens",
+      "use_cases": ["enviar alertas do RADAR", "receber comandos via Slack", "notificar relatórios"],
+      "required_env": ["SLACK_BOT_TOKEN", "SLACK_TEAM_ID"],
+      "status": "requer_configuracao"
+    },
+    {
+      "name": "google-drive",
+      "package": "mcp-google-drive",
+      "install": "npx -y mcp-google-drive",
+      "description": "Acesso ao Google Drive",
+      "use_cases": ["sincronizar relatórios", "ler planilhas de métricas", "salvar documentos"],
+      "required_env": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
+      "status": "requer_configuracao"
+    }
+  ],
+  "setup_order": ["filesystem", "fetch", "brave-search", "github", "postgres", "slack", "google-drive"],
+  "quick_start": {
+    "minimal": ["filesystem", "fetch"],
+    "recomendado": ["filesystem", "fetch", "brave-search", "github"],
+    "completo": ["filesystem", "fetch", "brave-search", "github", "postgres", "slack"]
+  }
+}

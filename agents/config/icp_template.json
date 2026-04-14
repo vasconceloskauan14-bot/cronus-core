@@ -1,0 +1,41 @@
+{
+  "setor": "SaaS B2B",
+  "sub_setor": "Automação empresarial / HR Tech / FinTech",
+  "tamanho": "50-500 funcionários",
+  "faturamento_anual": "R$5M - R$100M",
+  "maturidade_digital": "média-alta",
+  "cargo_decisor": ["CEO", "CTO", "COO", "Head of Growth", "VP de Operações"],
+  "cargo_influenciador": ["Gerente de TI", "Analista de Processos", "Head de Produto"],
+  "geografia": ["Brasil", "Portugal", "América Latina"],
+  "dores": [
+    "Escalar operações sem contratar proporcionalmente",
+    "Processos manuais e repetitivos consumindo tempo da equipe",
+    "Falta de visibilidade em dados e métricas em tempo real",
+    "Dificuldade em personalizar atendimento em escala",
+    "CAC alto e ciclo de vendas longo"
+  ],
+  "gatilhos_de_compra": [
+    "Rodada de investimento recente (Série A ou B)",
+    "Contratação de novo CTO ou Head de Tecnologia",
+    "Expansão para novo mercado ou país",
+    "Perda de cliente estratégico por ineficiência",
+    "Crescimento acima de 50% ao ano (escala desafiadora)"
+  ],
+  "sinais_de_compra": [
+    "Vagas abertas para automação, dados ou IA",
+    "Posts sobre desafios de crescimento no LinkedIn",
+    "Uso de ferramentas legacy (planilhas para gestão crítica)",
+    "Reclamações de clientes sobre demora no atendimento",
+    "Menção a problemas de integração de sistemas"
+  ],
+  "budget_estimado": "R$3.000 - R$30.000/mês",
+  "ciclo_de_vendas_estimado": "30-90 dias",
+  "tomada_de_decisao": "Comitê (CEO + CTO + CFO)",
+  "objecoes_comuns": [
+    "Já temos uma solução interna",
+    "Não temos budget agora",
+    "Precisamos validar com o time técnico",
+    "Preocupação com segurança de dados"
+  ],
+  "proposta_de_valor_chave": "Reduzir custos operacionais em 30-50% e triplicar capacidade da equipe sem novas contratações"
+}

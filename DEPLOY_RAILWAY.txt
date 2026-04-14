@@ -1,0 +1,122 @@
+================================================================
+  CRONUS — Deploy Railway (24/7 sem ligar o PC)
+================================================================
+
+ARQUITETURA:
+  Railway (roda 24h) → cria notas → push para GitHub
+  PC local (quando ligar) → pull do GitHub → Obsidian atualizado
+
+TEMPO ESTIMADO: 20 minutos (primeira vez)
+
+================================================================
+PASSO 1 — Criar repositório GitHub para o vault
+================================================================
+
+1. Acesse: https://github.com/new
+2. Nome do repositório: cronus-vault
+3. Visibilidade: PRIVADO (suas pesquisas ficam só pra você)
+4. NÃO marque "Add a README file"
+5. Clique em "Create repository"
+6. Guarde a URL: https://github.com/SEU_USUARIO/cronus-vault
+
+================================================================
+PASSO 2 — Criar Personal Access Token no GitHub
+================================================================
+
+1. GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+   Link: https://github.com/settings/tokens/new
+2. Note: "CRONUS Railway"
+3. Expiration: No expiration
+4. Marque APENAS: [x] repo (acesso completo ao repositório)
+5. Clique "Generate token"
+6. COPIE o token agora (só aparece uma vez!) — parece com: ghp_xxxxxxxxxxxxx
+
+================================================================
+PASSO 3 — Deploy no Railway
+================================================================
+
+1. Acesse: https://railway.app e faça login com GitHub
+2. New Project → Deploy from GitHub repo → Selecione "claude-code-main"
+   (ou o repo onde está o código do CRONUS)
+3. Após criar, clique no serviço → aba "Variables"
+4. Adicione estas variáveis (clique em "+ New Variable" para cada):
+
+   GROQ_API_KEY          = sua_chave_groq_aqui
+   CRONUS_PROVIDER       = groq
+   OBSIDIAN_AI_PROVIDER  = groq
+   OBSIDIAN_AI_MODEL     = llama-3.3-70b-versatile
+   OBSIDIAN_AI_VAULT     = obsidian-ai-vault
+   GIT_REPO_URL          = https://ghp_SEU_TOKEN@github.com/SEU_USUARIO/cronus-vault.git
+   GIT_USER_NAME         = CRONUS Bot
+   GIT_USER_EMAIL        = cronus@auto.bot
+   GIT_SYNC_INTERVAL_MINUTES = 30
+
+5. Aba "Settings" → em "Start Command" deve estar: python start_cloud.py
+   (se não estiver, defina isso)
+6. Clique em "Deploy" — aguarde 2-3 minutos para o build
+
+================================================================
+PASSO 4 — Conectar vault local ao GitHub
+================================================================
+
+Abra o Git Bash e execute (substituindo seu usuário e token):
+
+  cd "C:\Users\adria\Desktop\claude-code-main\claude-code-main\obsidian-ai-vault"
+  git init
+  git remote add origin https://ghp_SEU_TOKEN@github.com/SEU_USUARIO/cronus-vault.git
+  git add -A
+  git commit -m "vault inicial"
+  git branch -M main
+  git push -u origin main --force
+
+================================================================
+PASSO 5 — Sync automático no PC (quando ligar)
+================================================================
+
+Opção A — Manual (mais simples):
+  Dê duplo clique em SINCRONIZAR_DO_GITHUB.bat quando quiser atualizar
+
+Opção B — Automático a cada 15 min (recomendado):
+  1. Pesquise "Agendador de Tarefas" no Windows → Abrir
+  2. Criar Tarefa Básica → Nome: "CRONUS Sync GitHub"
+  3. Gatilho: Diariamente → Repetir a tarefa a cada: 15 minutos
+  4. Ação: Iniciar um programa
+     Programa: C:\Users\adria\Desktop\claude-code-main\claude-code-main\SINCRONIZAR_DO_GITHUB.bat
+  5. Concluir
+
+Opção C — Plugin Obsidian Git (mais elegante):
+  1. No Obsidian: Configurações → Plugins da Comunidade → Navegar
+  2. Busque "Obsidian Git" → Instalar → Ativar
+  3. Configurações do plugin:
+     - Auto pull interval: 15 (minutos)
+     - Remote: origin
+     - Branch: main
+  4. O Obsidian puxa as notas automaticamente a cada 15 min
+
+================================================================
+VERIFICAR SE ESTÁ FUNCIONANDO
+================================================================
+
+1. No Railway → aba "Logs" — você verá:
+   [radar] 'Demanda por editores': buscas iniciadas...
+   [git-sync] 5 arquivo(s) enviados para GitHub
+
+2. No GitHub → seu repo cronus-vault → aba "Commits"
+   Vai aparecer: "CRONUS: notas atualizadas 2026-04-13 14:30 (5 arquivo(s))"
+
+3. No Obsidian local (após sync):
+   Pasta Memoria/Radar/ vai ter as notas novas
+
+================================================================
+CUSTO
+================================================================
+
+Railway Free Plan:
+  - 500 horas/mês grátis (suficiente para 1 serviço 24h)
+  - 512 MB RAM (suficiente para o CRONUS)
+  - Caso precise de mais: Hobby Plan = US$ 5/mês
+
+GitHub: GRATUITO (repositório privado)
+Obsidian Git plugin: GRATUITO
+
+================================================================

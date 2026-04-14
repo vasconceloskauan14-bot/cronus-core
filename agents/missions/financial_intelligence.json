@@ -1,0 +1,75 @@
+{
+  "name": "Financial Intelligence Mission",
+  "objective": "Visão financeira completa: DRE, cash flow, precificação e fundraising",
+  "version": "1.0",
+  "steps": [
+    {
+      "name": "Análise Financeira Completa",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "income_statement",
+          "agent": "FINOPS",
+          "method": "income_statement",
+          "params": {"data": "{{financial_data}}", "period": "{{current_period}}"},
+          "description": "Análise de DRE"
+        },
+        {
+          "id": "cash_flow",
+          "agent": "FINOPS",
+          "method": "cash_flow_forecast",
+          "params": {"data": "{{cash_data}}", "months": 12},
+          "description": "Projeção de fluxo de caixa 12 meses"
+        },
+        {
+          "id": "financial_health",
+          "agent": "CAPITAL",
+          "method": "health_check",
+          "params": {"data": "{{financial_data}}"},
+          "description": "Score de saúde financeira"
+        }
+      ]
+    },
+    {
+      "name": "Estratégia Financeira",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "pricing_optimization",
+          "agent": "FINOPS",
+          "method": "pricing_strategy",
+          "params": {"product": "{{product_data}}", "costs": "{{cost_data}}"},
+          "description": "Otimização de precificação"
+        },
+        {
+          "id": "tax_planning",
+          "agent": "FINOPS",
+          "method": "tax_planning",
+          "params": {"financials": "{{financial_data}}", "regime": "{{tax_regime}}"},
+          "description": "Planejamento tributário"
+        }
+      ]
+    },
+    {
+      "name": "Decisão CEO",
+      "parallel": false,
+      "tasks": [
+        {
+          "id": "risk_analysis",
+          "agent": "CAPITAL",
+          "method": "risk_analysis",
+          "params": {"portfolio": "{{portfolio_data}}"},
+          "description": "Análise de riscos financeiros"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    "dre_analysis",
+    "cash_flow_12m",
+    "financial_health_score",
+    "pricing_recommendation",
+    "tax_savings_plan",
+    "risk_report"
+  ]
+}

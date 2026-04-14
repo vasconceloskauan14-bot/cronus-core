@@ -1,0 +1,74 @@
+{
+  "name": "Pesquisa de Mercado Profunda",
+  "objective": "Mapear completamente o mercado, concorrentes, oportunidades e ameaças usando SWARM + ANALYST em paralelo",
+  "success_criteria": {
+    "fontes_pesquisadas": 50,
+    "concorrentes_mapeados": 20,
+    "oportunidades_identificadas": 10,
+    "relatorio_final": "Markdown com 3000+ palavras"
+  },
+  "steps": [
+    {
+      "name": "Pesquisa Massiva Paralela",
+      "parallel": true,
+      "tasks": [
+        {
+          "id": "swarm_market_size",
+          "agent": "swarm",
+          "method": "research",
+          "params": {
+            "query": "tamanho do mercado de automação empresarial com IA no Brasil e globalmente 2025-2026",
+            "depth": 4,
+            "parallel": 10
+          }
+        },
+        {
+          "id": "swarm_competitors",
+          "agent": "swarm",
+          "method": "research",
+          "params": {
+            "query": "principais players de automação com IA: funcionalidades, preços, posicionamento, pontos fracos",
+            "depth": 3,
+            "parallel": 8
+          }
+        },
+        {
+          "id": "swarm_trends",
+          "agent": "swarm",
+          "method": "research",
+          "params": {
+            "query": "tendências emergentes em IA empresarial 2026: multi-agentes, autonomous AI, vertical AI",
+            "depth": 3,
+            "parallel": 6
+          }
+        },
+        {
+          "id": "radar_signals",
+          "agent": "radar",
+          "method": "scan",
+          "params": {
+            "targets": ["OpenAI", "Anthropic", "Google DeepMind", "Microsoft Copilot", "Salesforce Einstein"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Síntese e Análise",
+      "parallel": false,
+      "tasks": [
+        {
+          "id": "analyst_synthesis",
+          "agent": "analyst",
+          "method": "generate_report",
+          "params": {
+            "metrics": {
+              "fonte": "pesquisa_swarm",
+              "tipo": "inteligência_competitiva"
+            },
+            "period": "Q1-Q2 2026"
+          }
+        }
+      ]
+    }
+  ]
+}
