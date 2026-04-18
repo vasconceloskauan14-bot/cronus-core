@@ -113,7 +113,7 @@ class ObsidianRadarWorker:
 
         self.store = ObsidianMemoryStore(vault_path=self.vault_path)
         self.store.bootstrap()
-        self.search_tool = WebSearchTool(max_results=5)
+        self.search_tool = WebSearchTool(max_results=20)
         self.provider_alias = provider_alias or os.environ.get("OBSIDIAN_AI_PROVIDER", "") or os.environ.get("CRONUS_PROVIDER", "") or "openai"
         self.model = model or os.environ.get("OBSIDIAN_AI_MODEL", "")
         self.provider = ProviderFactory.create(
@@ -232,8 +232,30 @@ class ObsidianRadarWorker:
         "notícias e lançamentos: o que mudou recentemente, novos players, ferramentas",
     ]
 
+    def _read_vault_insights(self, topic: dict) -> str:
+        """Lê as últimas notas do vault para este tópico e extrai achados-chave."""
+        folder_raw = str(topic.get("folder", "")).strip()
+        if not folder_raw:
+            return ""
+        folder = self.vault_path / folder_raw
+        if not folder.exists():
+            return ""
+        notes = sorted(folder.rglob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)[:5]
+        if not notes:
+            return ""
+        excerpts = []
+        for note in notes:
+            try:
+                text = note.read_text(encoding="utf-8", errors="ignore")
+                # pega as 8 primeiras linhas não-vazias após o frontmatter
+                lines = [l.strip() for l in text.split("---", 2)[-1].splitlines() if l.strip()]
+                excerpts.append("\n".join(lines[:8]))
+            except Exception:
+                continue
+        return "\n\n---\n".join(excerpts)
+
     def _generate_sub_queries(self, topic: dict, seen_queries: list[str], cycle_index: int = 0) -> list[str]:
-        """Gera 5 queries NOVAS, evitando repetir o que já foi pesquisado antes."""
+        """Gera 8 queries NOVAS aprendendo com o vault, evitando repetir o que já foi pesquisado."""
         topic_name = str(topic.get("name", ""))
         base_query = str(topic.get("query", topic_name)).strip()
         guidance = str(topic.get("notes", "")).strip()
@@ -244,60 +266,73 @@ class ObsidianRadarWorker:
         # Perspectiva desta rodada (rotaciona a cada ciclo)
         perspective = self._PERSPECTIVES[cycle_index % len(self._PERSPECTIVES)]
 
-        # Últimas 20 queries já usadas para evitar repetição
-        recent_queries = seen_queries[-20:] if seen_queries else []
+        # Últimas queries para evitar repetição
+        recent_queries = seen_queries[-10:] if seen_queries else []
         recent_block = "\n".join(f"- {q}" for q in recent_queries) if recent_queries else "Nenhuma ainda."
 
+        # Lê o cérebro do vault para gerar queries mais inteligentes
+        vault_context = self._read_vault_insights(topic)
+        vault_block = vault_context[:600] if vault_context else "Nenhuma nota anterior encontrada."
+
         if not self.provider.is_available():
-            # Fallback sem IA: variações com data e fonte
             return [
                 f"{base_query} {year}",
-                f"{base_query} reddit forum",
-                f"{base_query} preços valores cobrados",
+                f"{base_query} brasil mercado {year}",
+                f"{base_query} reddit forum discussion",
+                f"{base_query} preços valores cobrados freelancer",
+                f"{base_query} tendências crescimento percentual {year}",
                 f"site:reddit.com {base_query}",
-                f"{base_query} tendências {year}",
+                f"{base_query} salario remuneracao media",
+                f"{base_query} plataformas contratacao fiverr upwork",
             ]
 
         try:
             wait_for_slot("radar:sub_queries")
             completion = self.provider.complete(CompletionRequest(
-                system="Você é um pesquisador especialista em criar buscas web variadas, atualizadas e originais.",
+                system="Você é um pesquisador especialista. Cria buscas web variadas, profundas e originais que descobrem ângulos NOVOS ainda não pesquisados.",
                 messages=[Message(role="user", content=textwrap.dedent(f"""\
                     Tema: {topic_name}
-                    Query base de referência: {base_query}
-                    Foco editorial: {guidance or 'pesquisa geral'}
-                    Data atual: {now.strftime('%Y-%m-%d')}
+                    Query base: {base_query}
+                    Foco: {guidance or 'pesquisa geral'}
+                    Data: {now.strftime('%Y-%m-%d')}
                     Perspectiva desta rodada: {perspective}
 
-                    QUERIES JÁ USADAS ANTES — NÃO repita estas nem variações próximas:
+                    O QUE O VAULT JÁ SABE (evite repetir esses achados, busque lacunas):
+                    {vault_block}
+
+                    QUERIES JÁ USADAS — NÃO repita:
                     {recent_block}
 
-                    Gere exatamente 5 queries de busca NOVAS e DIFERENTES das já listadas acima.
+                    Gere exatamente 8 queries NOVAS que exploram ÂNGULOS DIFERENTES e cobrem lacunas do vault.
 
-                    Regras obrigatórias:
-                    - Pelo menos 2 queries devem incluir o ano {year}
-                    - Uma query deve conter "reddit" ou "forum" ou "discussion"
-                    - Uma query deve ser em português brasileiro natural
-                    - Uma query deve buscar especificamente PORCENTAGENS: inclua palavras como "growth percentage", "cresceu %", "aumento percentual", "statistics 2026", "market share %"
-                    - Use palavras-chave diferentes das queries já usadas
-                    - Adapte o foco para: {perspective}
+                    Obrigatório:
+                    - 2 queries com o ano {year}
+                    - 1 query em português brasileiro com dados do Brasil
+                    - 1 query com "reddit" ou "forum" ou "community"
+                    - 1 query buscando PORCENTAGENS/ESTATÍSTICAS ("% growth", "market share", "statistics")
+                    - 1 query buscando PLATAFORMAS específicas (fiverr, upwork, workana, 99freelas)
+                    - 1 query buscando PREÇOS/SALÁRIOS reais
+                    - 1 query sobre NICHO ESPECÍFICO dentro do tema
 
-                    Retorne SOMENTE as 5 queries, uma por linha, sem numeração nem explicação.
+                    Retorne SOMENTE as 8 queries, uma por linha, sem numeração nem explicação.
                 """))],
-                temperature=0.7,
-                max_tokens=300,
+                temperature=0.85,
+                max_tokens=400,
                 model=self.model,
             ))
             queries = [q.strip() for q in completion.text.strip().splitlines() if q.strip()]
-            return queries[:5] if queries else [f"{base_query} {year}"]
+            return queries[:8] if queries else [f"{base_query} {year}"]
         except Exception as exc:
             print(f"[radar] sub_queries falhou ({exc}), usando queries padrão")
             return [
                 f"{base_query} {year}",
-                f"{base_query} reddit forum",
-                f"{base_query} preços valores cobrados",
+                f"{base_query} brasil mercado {year}",
+                f"{base_query} reddit forum discussion",
+                f"{base_query} preços valores cobrados freelancer",
+                f"{base_query} tendências crescimento percentual {year}",
                 f"site:reddit.com {base_query}",
-                f"{base_query} tendências {year}",
+                f"{base_query} salario remuneracao media",
+                f"{base_query} plataformas contratacao fiverr upwork",
             ]
 
     def _notify(self, title: str, message: str) -> None:
@@ -369,7 +404,7 @@ class ObsidianRadarWorker:
             topic_state["last_error"] = "nenhum resultado novo encontrado"
             # Salva as queries mesmo sem resultado para não repetir na próxima rodada
             updated_queries = seen_queries + sub_queries
-            topic_state["seen_queries"] = updated_queries[-60:]
+            topic_state["seen_queries"] = updated_queries[-20:]
             topic_state["cycle_index"] = cycle_index + 1
             return {"topic": topic_name, "ok": False, "error": "nenhum resultado novo"}
 
@@ -385,11 +420,11 @@ class ObsidianRadarWorker:
         topic_state["last_note_path"] = note_path.relative_to(self.vault_path).as_posix()
         topic_state["last_error"] = ""
         merged_urls = list(seen_urls.union(all_new_urls))
-        topic_state["seen_urls"] = merged_urls[-400:]
+        topic_state["seen_urls"] = merged_urls[-40:]  # janela curta — recicla URLs mais rápido
 
         # Salva as queries usadas neste ciclo para evitar repetição futura
         updated_queries = seen_queries + sub_queries
-        topic_state["seen_queries"] = updated_queries[-60:]  # guarda até 60 queries
+        topic_state["seen_queries"] = updated_queries[-20:]  # janela curta — força novos ângulos
         topic_state["cycle_index"] = cycle_index + 1
 
         print(f"[radar] '{topic_name}' concluído: {len(all_items)} fontes coletadas")
@@ -454,9 +489,11 @@ class ObsidianRadarWorker:
         """)
 
         if not feed_file.exists():
+            yesterday = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+            yesterday_link = f"← [[feed-{yesterday}]]" if (feed_folder / f"feed-{yesterday}.md").exists() else ""
             header = (
                 f"# Feed de Pesquisas — {now.strftime('%d/%m/%Y')}\n"
-                f"_Atualizado automaticamente pelo CRONUS Radar_\n"
+                f"_Atualizado automaticamente pelo CRONUS Radar_ {yesterday_link}\n"
             )
             feed_file.write_text(header + block, encoding="utf-8")
         else:
@@ -550,7 +587,17 @@ class ObsidianRadarWorker:
             """
         ).strip()
 
-        return f"{metadata_block}\n\n{note_body}\n"
+        # Wikilinks para o grafo do Obsidian
+        feed_link = f"[[feed-{datetime.now().strftime('%Y-%m-%d')}]]"
+        memory_links = " · ".join(
+            f"[[{hit.path.split('/')[-1].replace('.md', '')}]]"
+            for hit in memory_hits
+        ) if memory_hits else ""
+        links_block = f"\n---\n**Ver também:** {feed_link}"
+        if memory_links:
+            links_block += f" · {memory_links}"
+
+        return f"{metadata_block}\n\n{note_body}\n{links_block}\n"
 
     def _format_sources(self, items: list[dict]) -> str:
         if not items:
