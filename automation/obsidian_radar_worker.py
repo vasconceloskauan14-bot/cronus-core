@@ -368,8 +368,11 @@ class ObsidianRadarWorker:
         topic_name = str(topic.get("name", "Tema sem nome"))
         topic_key = _slugify(topic_name)
         topic_state = state["topics"].setdefault(topic_key, {})
-        seen_urls = set(topic_state.get("seen_urls", []))
-        seen_queries: list[str] = topic_state.get("seen_queries", [])
+        # Sempre trimma para manter janela curta — desbloq tópicos travados
+        topic_state["seen_urls"] = topic_state.get("seen_urls", [])[-40:]
+        topic_state["seen_queries"] = topic_state.get("seen_queries", [])[-20:]
+        seen_urls = set(topic_state["seen_urls"])
+        seen_queries: list[str] = topic_state["seen_queries"]
         cycle_index: int = topic_state.get("cycle_index", 0)
         deep_minutes = int(config.get("deep_research_minutes", 40))
         max_results = max(int(config.get("max_results_per_topic", 8)), 1)
