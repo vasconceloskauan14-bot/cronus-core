@@ -1,9 +1,19 @@
 {
   "enabled": true,
-  "loop_minutes": 8,
-  "max_topics_per_cycle": 7,
-  "max_results_per_topic": 20,
-  "deep_research_minutes": 20,
+  "loop_minutes": 1,
+  "max_topics_per_cycle": 20,
+  "research_agents": 10,
+  "max_parallel_searches": 100,
+  "max_results_per_topic": 30,
+  "queries_per_topic": 25,
+  "query_agents_per_topic": 5,
+  "query_pause_min_seconds": 0,
+  "pause_between_topics_seconds": 0,
+  "seen_urls_window": 40,
+  "seen_queries_window": 40,
+  "feed_summary_items": 12,
+  "use_ai_provider": true,
+  "deep_research_minutes": 2,
   "topic_default_cadence_hours": 0,
   "topics": [
     {
@@ -75,6 +85,123 @@
       "notes": "Pesquisar como ferramentas de IA estao afetando o mercado de edicao: quais tarefas estao sendo automatizadas, o que ainda precisa de humanos, como editores estao se adaptando, oportunidades criadas pela IA.",
       "cadence_hours": 0,
       "folder": "Memoria/Radar/IA-edicao-impacto",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "Edicao para Infoprodutores e Lancamentos",
+      "query": "video editing for infoproducts launches sales funnels VSL editor brazil hotmart eduzz",
+      "notes": "Focar em como infoprodutores contratam editores, precos de VSL, criativos de anuncios, e o que eles valorizam em um editor de lancamento.",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/Edicao-Infoprodutos",
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "name": "Edicao para YouTube e Retencao",
+      "query": "youtube video retention editing techniques mrbeast style high retention editing demand freelance",
+      "notes": "Explorar a demanda por editores que entendem de retencao, tecnicas de 'storytelling' visual, e quanto canais grandes pagam por esse servico.",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/YouTube-Retencao",
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "name": "Short Form Content Factory",
+      "query": "shorts tiktok reels content factory business model outsourcing video editing brazil",
+      "notes": "Como montar uma fabrica de shorts/reels, modelos de escala, pacotes de 30-60 videos por mes, e precificacao para agencias.",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/Short-Form-Factory",
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "name": "Freelancer de Elite: Posicionamento",
+      "query": "high ticket video editing positioning how to charge more video editor freelance premium",
+      "notes": "Como se tornar um editor de 'high ticket', sair da guerra de precos, e onde encontrar clientes que pagam bem.",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/Freelancer-Elite",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "Novas Tecnologias de Render e Workflow",
+      "query": "video editing workflow optimization cloud rendering remote editing tools freelancers 2026",
+      "notes": "Ferramentas que aceleram a entrega: Frame.io, cloud editing, automacao de export, etc.",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/Workflow-Tech",
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "name": "Mercado de Motion Graphics 2D/3D",
+      "query": "motion graphics designer demand prices 2026 2d 3d animation for business ads",
+      "notes": "Precos e demanda para motion design puro aplicado a marketing e anuncios.",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/Motion-Graphics",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "Edicao de Video para Real Estate Premium",
+      "query": "real estate video editing premium luxury properties drone footage editing services brazil florida",
+      "notes": "Nicho imobiliario de luxo: o que eles buscam, quanto pagam por tour virtual e videos cinematograficos.",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/Real-Estate-Premium",
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "name": "videos virais",
+      "query": "story",
+      "notes": "",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/videos-virais",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "videos virais",
+      "query": "youtube",
+      "notes": "",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/videos-virais",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "videos virais",
+      "query": "IA",
+      "notes": "",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/videos-virais",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "videos virais",
+      "query": "tik tok",
+      "notes": "",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/videos-virais",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "videos virais",
+      "query": "shorts",
+      "notes": "",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/videos-virais",
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "name": "videos virais",
+      "query": "reals",
+      "notes": "",
+      "cadence_hours": 0,
+      "folder": "Memoria/Radar/videos-virais",
       "priority": 8,
       "enabled": true
     }
