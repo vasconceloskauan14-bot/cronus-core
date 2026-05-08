@@ -1,0 +1,10 @@
+.git
+__pycache__
+*.pyc
+*.pyo
+.env
+node_modules
+logs/
+*.log
+.tmp-zeus-smoke-vault/
+obsidian_3d_brain.html

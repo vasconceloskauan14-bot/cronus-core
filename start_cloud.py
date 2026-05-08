@@ -6,12 +6,34 @@ Deploy: Railway, Render, DigitalOcean, Oracle Cloud, etc.
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+
+
+def _setup_persistent_state() -> None:
+    """Move state/ para volume /data/state se estiver no Fly.io."""
+    data_dir = Path("/data/state")
+    local_state = ROOT / "state"
+    if not Path("/data").exists():
+        return  # não está no Fly.io
+    data_dir.mkdir(parents=True, exist_ok=True)
+    # Copia arquivos existentes de state/ para o volume (primeira vez)
+    if local_state.exists() and not local_state.is_symlink():
+        for f in local_state.iterdir():
+            dest = data_dir / f.name
+            if not dest.exists():
+                shutil.copy2(f, dest)
+        shutil.rmtree(local_state)
+    elif local_state.exists() and local_state.is_symlink():
+        local_state.unlink()
+    # Cria symlink state/ → /data/state
+    local_state.symlink_to(data_dir)
+    print(f"[cloud] state/ → {data_dir} (volume persistente)")
 
 
 def _load_dotenv() -> None:
@@ -36,6 +58,7 @@ def _resolve_vault(raw: str) -> Path:
 
 def main() -> None:
     _load_dotenv()
+    _setup_persistent_state()
 
     # Railway injeta PORT automaticamente
     port = int(os.environ.get("PORT", os.environ.get("OBSIDIAN_AI_PORT", "8787")))
@@ -44,11 +67,15 @@ def main() -> None:
     python = sys.executable
 
     workers = [
-        ("obsidian-radar",     [python, str(ROOT / "automation/obsidian_radar_worker.py")]),
-        ("obsidian-synthesis", [python, str(ROOT / "automation/obsidian_synthesis_worker.py")]),
-        ("obsidian-news",      [python, str(ROOT / "automation/obsidian_news_worker.py")]),
-        ("git-sync",           [python, str(ROOT / "automation/git_sync_worker.py")]),
+        ("obsidian-radar",       [python, str(ROOT / "automation/obsidian_radar_worker.py")]),
+        ("obsidian-synthesis",   [python, str(ROOT / "automation/obsidian_synthesis_worker.py")]),
+        ("obsidian-news",        [python, str(ROOT / "automation/obsidian_news_worker.py")]),
+        ("git-sync",             [python, str(ROOT / "automation/git_sync_worker.py")]),
+        ("karameloo-publisher",  [python, str(ROOT / "automation/karameloo_publisher.py")]),
+        ("karameloo-pricing",    [python, str(ROOT / "automation/cronus_pricing_updater.py")]),
     ]
+    if os.environ.get("EVENT_FORECASTER_ENABLED", "true").lower() not in ("0", "false", "no"):
+        workers.append(("event-forecast", [python, str(ROOT / "automation/event_market_forecaster.py"), "--loop"]))
 
     procs: list[tuple[str, subprocess.Popen]] = []
     for name, cmd in workers:
