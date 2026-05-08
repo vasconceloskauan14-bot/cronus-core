@@ -22,14 +22,17 @@ def _setup_persistent_state() -> None:
     if not Path("/data").exists():
         return  # não está no Fly.io
     data_dir.mkdir(parents=True, exist_ok=True)
-    # Copia arquivos existentes de state/ para o volume (primeira vez)
+    # Copia conteúdo de state/ para o volume na primeira vez
     if local_state.exists() and not local_state.is_symlink():
-        for f in local_state.iterdir():
-            dest = data_dir / f.name
+        for item in local_state.iterdir():
+            dest = data_dir / item.name
             if not dest.exists():
-                shutil.copy2(f, dest)
+                if item.is_dir():
+                    shutil.copytree(item, dest)
+                else:
+                    shutil.copy2(item, dest)
         shutil.rmtree(local_state)
-    elif local_state.exists() and local_state.is_symlink():
+    elif local_state.is_symlink():
         local_state.unlink()
     # Cria symlink state/ → /data/state
     local_state.symlink_to(data_dir)
