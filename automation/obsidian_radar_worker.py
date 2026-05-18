@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 import subprocess
 import sys
 import textwrap
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from pathlib import Path
+from threading import Lock, Semaphore
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -71,7 +74,20 @@ DEFAULT_CONFIG = {
     "enabled": True,
     "loop_minutes": 120,
     "max_topics_per_cycle": 2,
+    "research_agents": 1,
+    "max_parallel_searches": 12,
+    "search_backend": "fallback",
+    "search_min_interval_seconds": 8,
     "max_results_per_topic": 5,
+    "queries_per_topic": 8,
+    "query_agents_per_topic": 1,
+    "query_pause_min_seconds": 20,
+    "pause_between_topics_seconds": 60,
+    "seen_urls_window": 120,
+    "seen_queries_window": 48,
+    "feed_summary_items": 6,
+    "use_ai_provider": True,
+    "ai_cooldown_after_rate_limit_minutes": 30,
     "topic_default_cadence_hours": 8,
     "topics": [
         {
@@ -114,6 +130,7 @@ class ObsidianRadarWorker:
         self.store = ObsidianMemoryStore(vault_path=self.vault_path)
         self.store.bootstrap()
         self.search_tool = WebSearchTool(max_results=20)
+        os.environ.setdefault("CRONUS_NO_PROVIDER_RETRY_ON_429", "1")
         self.provider_alias = provider_alias or os.environ.get("OBSIDIAN_AI_PROVIDER", "") or os.environ.get("CRONUS_PROVIDER", "") or "openai"
         self.model = model or os.environ.get("OBSIDIAN_AI_MODEL", "")
         self.provider = ProviderFactory.create(
@@ -121,6 +138,11 @@ class ObsidianRadarWorker:
             model=self.model,
             agent_name="OBSIDIAN_RADAR",
         )
+        self._provider_lock = Lock()
+        self._ai_cooldown_until = 0.0
+        self._search_slot_lock = Lock()
+        self._search_parallel_limit = 12
+        self._search_slots = Semaphore(self._search_parallel_limit)
 
         self._ensure_config()
 
@@ -129,12 +151,47 @@ class ObsidianRadarWorker:
             return
         _write_json(self.config_path, DEFAULT_CONFIG)
 
+    def _complete_with_provider(self, request: CompletionRequest):
+        if self._is_ai_cooling_down():
+            remaining = int(self._ai_cooldown_until - time.time())
+            raise RuntimeError(f"provider em cooldown por rate limit ({remaining}s restantes)")
+        with self._provider_lock:
+            try:
+                return self.provider.complete(request)
+            except Exception as exc:
+                lowered = str(exc).lower()
+                if "429" in lowered or "rate limit" in lowered or "too many requests" in lowered:
+                    self._start_ai_cooldown(str(exc))
+                raise
+
+    def _is_ai_cooling_down(self) -> bool:
+        return time.time() < self._ai_cooldown_until
+
+    def _start_ai_cooldown(self, reason: str) -> None:
+        config = self.load_config()
+        minutes = max(int(config.get("ai_cooldown_after_rate_limit_minutes", 30)), 1)
+        self._ai_cooldown_until = time.time() + minutes * 60
+        print(f"[radar] IA em cooldown por {minutes} min apos rate limit: {reason}")
+
     def load_config(self) -> dict:
         cfg = _read_json(self.config_path, DEFAULT_CONFIG)
         cfg.setdefault("enabled", True)
         cfg.setdefault("loop_minutes", 120)
         cfg.setdefault("max_topics_per_cycle", 2)
+        cfg.setdefault("research_agents", 1)
+        cfg.setdefault("max_parallel_searches", 12)
+        cfg.setdefault("search_backend", "fallback")
+        cfg.setdefault("search_min_interval_seconds", 8)
         cfg.setdefault("max_results_per_topic", 5)
+        cfg.setdefault("queries_per_topic", 8)
+        cfg.setdefault("query_agents_per_topic", 1)
+        cfg.setdefault("query_pause_min_seconds", 20)
+        cfg.setdefault("pause_between_topics_seconds", 60)
+        cfg.setdefault("seen_urls_window", 120)
+        cfg.setdefault("seen_queries_window", 48)
+        cfg.setdefault("feed_summary_items", 6)
+        cfg.setdefault("use_ai_provider", True)
+        cfg.setdefault("ai_cooldown_after_rate_limit_minutes", 30)
         cfg.setdefault("topic_default_cadence_hours", 8)
         cfg.setdefault("topics", [])
         return cfg
@@ -147,6 +204,14 @@ class ObsidianRadarWorker:
 
     def save_state(self, state: dict) -> None:
         _write_json(self.state_path, state)
+
+    def _set_search_parallel_limit(self, limit: int) -> None:
+        normalized_limit = max(int(limit), 1)
+        with self._search_slot_lock:
+            if normalized_limit == self._search_parallel_limit:
+                return
+            self._search_parallel_limit = normalized_limit
+            self._search_slots = Semaphore(normalized_limit)
 
     def run_forever(self) -> None:
         while True:
@@ -169,15 +234,89 @@ class ObsidianRadarWorker:
 
         selected_topics = self._pick_topics(config=config, state=state)
         results: list[dict] = []
+        research_agents = max(int(config.get("research_agents", 1)), 1)
+        pause_between_topics = max(int(config.get("pause_between_topics_seconds", 60)), 0)
+        max_parallel_searches = max(int(config.get("max_parallel_searches", 12)), 1)
+        self._set_search_parallel_limit(max_parallel_searches)
+        if hasattr(self.search_tool, "configure"):
+            self.search_tool.configure(
+                duckduckgo_backend=str(config.get("search_backend", "fallback")).strip() or "fallback",
+                min_interval_seconds=max(float(config.get("search_min_interval_seconds", 8)), 0.0),
+            )
 
-        for idx, topic in enumerate(selected_topics):
-            outcome = self._process_topic(topic=topic, config=config, state=state)
-            results.append(outcome)
-            # Pausa entre tópicos para não sobrecarregar a API
-            if idx < len(selected_topics) - 1:
-                print(f"[radar] pausa 60s antes do próximo tópico...")
-                time.sleep(60)
+        if not selected_topics:
+            state["last_cycle_at"] = datetime.now().isoformat(timespec="seconds")
+            self.save_state(state)
+            summary = {
+                "ok": True,
+                "processed_topics": 0,
+                "results": [],
+                "last_cycle_at": state["last_cycle_at"],
+            }
+            print(json.dumps(summary, ensure_ascii=False, indent=2))
+            return summary
 
+        if research_agents > 1 and len(selected_topics) > 1:
+            parallelism = min(research_agents, len(selected_topics))
+            print(
+                f"[radar] executando {len(selected_topics)} topico(s) com "
+                f"{parallelism} agente(s) de pesquisa em paralelo "
+                f"| teto global de buscas simultaneas: {max_parallel_searches}"
+            )
+            ordered_outcomes: list[dict | None] = [None] * len(selected_topics)
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                future_map = {}
+                for idx, topic in enumerate(selected_topics):
+                    topic_key = _slugify(topic.get("name", "tema"))
+                    topic_state = copy.deepcopy(state["topics"].get(topic_key, {}))
+                    future = executor.submit(self._process_topic, topic, config, topic_state)
+                    future_map[future] = idx
+
+                for future in as_completed(future_map):
+                    idx = future_map[future]
+                    topic = selected_topics[idx]
+                    topic_key = _slugify(topic.get("name", "tema"))
+                    try:
+                        ordered_outcomes[idx] = future.result()
+                    except Exception as exc:
+                        ordered_outcomes[idx] = {
+                            "topic": str(topic.get("name", "Tema sem nome")),
+                            "topic_key": topic_key,
+                            "ok": False,
+                            "error": str(exc),
+                            "topic_state": copy.deepcopy(state["topics"].get(topic_key, {})),
+                        }
+
+            for outcome in ordered_outcomes:
+                if not outcome:
+                    continue
+                self._finalize_topic_outcome(outcome=outcome, state=state)
+                self.save_state(state)
+                results.append(self._public_outcome(outcome))
+
+            state["last_cycle_at"] = datetime.now().isoformat(timespec="seconds")
+            self.save_state(state)
+
+            summary = {
+                "ok": True,
+                "processed_topics": len(selected_topics),
+                "results": results,
+                "last_cycle_at": state["last_cycle_at"],
+            }
+            print(json.dumps(summary, ensure_ascii=False, indent=2))
+            return summary
+
+        if research_agents <= 1 or len(selected_topics) <= 1:
+            for idx, topic in enumerate(selected_topics):
+                topic_key = _slugify(topic.get("name", "tema"))
+                topic_state = copy.deepcopy(state["topics"].get(topic_key, {}))
+                outcome = self._process_topic(topic=topic, config=config, topic_state=topic_state)
+                self._finalize_topic_outcome(outcome=outcome, state=state)
+                self.save_state(state)
+                results.append(self._public_outcome(outcome))
+                if idx < len(selected_topics) - 1 and pause_between_topics:
+                    print(f"[radar] pausa {pause_between_topics}s antes do proximo topico...")
+                    time.sleep(pause_between_topics)
         state["last_cycle_at"] = datetime.now().isoformat(timespec="seconds")
         self.save_state(state)
 
@@ -189,6 +328,30 @@ class ObsidianRadarWorker:
         }
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return summary
+
+    def _public_outcome(self, outcome: dict) -> dict:
+        return {
+            key: value
+            for key, value in outcome.items()
+            if key not in {"topic_state", "topic_key", "feed_payload", "notification"}
+        }
+
+    def _finalize_topic_outcome(self, outcome: dict, state: dict) -> None:
+        topic_key = str(outcome.get("topic_key", "")).strip()
+        topic_state = outcome.get("topic_state")
+        if topic_key and isinstance(topic_state, dict):
+            state["topics"][topic_key] = topic_state
+
+        feed_payload = outcome.get("feed_payload")
+        if isinstance(feed_payload, dict) and feed_payload:
+            self._append_to_feed(**feed_payload)
+
+        notification = outcome.get("notification")
+        if isinstance(notification, dict) and notification:
+            self._notify(
+                title=str(notification.get("title", "CRONUS")),
+                message=str(notification.get("message", "")),
+            )
 
     def _pick_topics(self, config: dict, state: dict) -> list[dict]:
         topics = [topic for topic in config.get("topics", []) if topic.get("enabled", True)]
@@ -254,11 +417,13 @@ class ObsidianRadarWorker:
                 continue
         return "\n\n---\n".join(excerpts)
 
-    def _generate_sub_queries(self, topic: dict, seen_queries: list[str], cycle_index: int = 0) -> list[str]:
+    def _generate_sub_queries(self, topic: dict, seen_queries: list[str], config: dict, cycle_index: int = 0) -> list[str]:
         """Gera 8 queries NOVAS aprendendo com o vault, evitando repetir o que já foi pesquisado."""
         topic_name = str(topic.get("name", ""))
         base_query = str(topic.get("query", topic_name)).strip()
         guidance = str(topic.get("notes", "")).strip()
+        queries_per_topic = max(int(config.get("queries_per_topic", 8)), 4)
+        use_ai_provider = bool(config.get("use_ai_provider", True))
 
         now = datetime.now()
         year = now.strftime("%Y")
@@ -274,8 +439,8 @@ class ObsidianRadarWorker:
         vault_context = self._read_vault_insights(topic)
         vault_block = vault_context[:600] if vault_context else "Nenhuma nota anterior encontrada."
 
-        if not self.provider.is_available():
-            return [
+        if not use_ai_provider or not self.provider.is_available() or self._is_ai_cooling_down():
+            fallback_queries = [
                 f"{base_query} {year}",
                 f"{base_query} brasil mercado {year}",
                 f"{base_query} reddit forum discussion",
@@ -285,10 +450,11 @@ class ObsidianRadarWorker:
                 f"{base_query} salario remuneracao media",
                 f"{base_query} plataformas contratacao fiverr upwork",
             ]
+            return fallback_queries[:queries_per_topic]
 
         try:
             wait_for_slot("radar:sub_queries")
-            completion = self.provider.complete(CompletionRequest(
+            completion = self._complete_with_provider(CompletionRequest(
                 system="Você é um pesquisador especialista. Cria buscas web variadas, profundas e originais que descobrem ângulos NOVOS ainda não pesquisados.",
                 messages=[Message(role="user", content=textwrap.dedent(f"""\
                     Tema: {topic_name}
@@ -303,7 +469,7 @@ class ObsidianRadarWorker:
                     QUERIES JÁ USADAS — NÃO repita:
                     {recent_block}
 
-                    Gere exatamente 8 queries NOVAS que exploram ÂNGULOS DIFERENTES e cobrem lacunas do vault.
+                    Gere exatamente {queries_per_topic} queries NOVAS que exploram ÂNGULOS DIFERENTES e cobrem lacunas do vault.
 
                     Obrigatório:
                     - 2 queries com o ano {year}
@@ -314,17 +480,17 @@ class ObsidianRadarWorker:
                     - 1 query buscando PREÇOS/SALÁRIOS reais
                     - 1 query sobre NICHO ESPECÍFICO dentro do tema
 
-                    Retorne SOMENTE as 8 queries, uma por linha, sem numeração nem explicação.
+                    Retorne SOMENTE as {queries_per_topic} queries, uma por linha, sem numeração nem explicação.
                 """))],
                 temperature=0.85,
                 max_tokens=400,
                 model=self.model,
             ))
             queries = [q.strip() for q in completion.text.strip().splitlines() if q.strip()]
-            return queries[:8] if queries else [f"{base_query} {year}"]
+            return queries[:queries_per_topic] if queries else [f"{base_query} {year}"]
         except Exception as exc:
             print(f"[radar] sub_queries falhou ({exc}), usando queries padrão")
-            return [
+            fallback_queries = [
                 f"{base_query} {year}",
                 f"{base_query} brasil mercado {year}",
                 f"{base_query} reddit forum discussion",
@@ -334,128 +500,210 @@ class ObsidianRadarWorker:
                 f"{base_query} salario remuneracao media",
                 f"{base_query} plataformas contratacao fiverr upwork",
             ]
+            return fallback_queries[:queries_per_topic]
 
-    def _notify(self, title: str, message: str) -> None:
-        """Exibe notificação toast nativa do Windows (sem abrir janela CMD)."""
-        import platform
-        if platform.system() != "Windows":
-            return  # Railway é Linux — sem powershell
+    def _telegram_notify(self, title: str, message: str) -> None:
+        """Envia notificação via Telegram bot (funciona no Railway/Linux)."""
+        token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+        chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
+        if not token or not chat_id:
+            return
         try:
-            safe_title = title.replace("'", "").replace('"', "")
-            safe_msg = message.replace("'", "").replace('"', "")
-            ps = (
-                "[reflection.assembly]::loadwithpartialname('System.Windows.Forms')|Out-Null;"
-                "[reflection.assembly]::loadwithpartialname('System.Drawing')|Out-Null;"
-                "$n=New-Object System.Windows.Forms.NotifyIcon;"
-                "$n.Icon=[System.Drawing.SystemIcons]::Information;"
-                "$n.Visible=$true;"
-                f"$n.BalloonTipTitle='{safe_title}';"
-                f"$n.BalloonTipText='{safe_msg}';"
-                "$n.ShowBalloonTip(10000);"
-                "Start-Sleep 11;"
-                "$n.Dispose()"
+            import urllib.request
+            text = f"🎯 *{title}*\n\n{message}"[:4096]
+            payload = json.dumps({"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}).encode()
+            req = urllib.request.Request(
+                f"https://api.telegram.org/bot{token}/sendMessage",
+                data=payload,
+                headers={"Content-Type": "application/json"},
             )
-            subprocess.Popen(
-                ["powershell.exe", "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", ps],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                creationflags=subprocess.CREATE_NO_WINDOW,
-            )
+            urllib.request.urlopen(req, timeout=10)
         except Exception:
             pass
 
-    def _process_topic(self, topic: dict, config: dict, state: dict) -> dict:
+    def _notify(self, title: str, message: str) -> None:
+        """Envia notificação via Telegram. Balloon tip Windows removido — causava flash de CMD."""
+        self._telegram_notify(title, message)
+
+    def _run_search_query(
+        self,
+        topic_name: str,
+        query: str,
+        query_index: int,
+        total_queries: int,
+        max_results: int,
+    ) -> list[dict]:
+        self._search_slots.acquire()
+        try:
+            print(f"[radar] [{topic_name}] busca {query_index}/{total_queries}: {query[:80]}")
+            result = self.search_tool.run(query=query, max_results=max_results)
+            if not result.success or not isinstance(result.output, list):
+                if result.error:
+                    print(f"[radar] [{topic_name}] busca falhou: {result.error}")
+                return []
+            return result.output
+        finally:
+            self._search_slots.release()
+
+    def _collect_query_results(
+        self,
+        topic_name: str,
+        sub_queries: list[str],
+        seen_urls: set[str],
+        max_results: int,
+        pause_seconds: int,
+        query_agents: int,
+    ) -> tuple[list[dict], set[str]]:
+        all_items: list[dict] = []
+        all_new_urls: set[str] = set()
+        total_queries = len(sub_queries)
+
+        if total_queries == 0:
+            return all_items, all_new_urls
+
+        batch_size = max(1, min(query_agents, total_queries))
+        batch_pause_seconds = pause_seconds if batch_size == 1 else max(int(pause_seconds / batch_size), 1)
+
+        for start in range(0, total_queries, batch_size):
+            batch = sub_queries[start : start + batch_size]
+            batch_number = (start // batch_size) + 1
+            total_batches = (total_queries + batch_size - 1) // batch_size
+            if batch_size > 1:
+                print(
+                    f"[radar] [{topic_name}] lote {batch_number}/{total_batches} com "
+                    f"{len(batch)} agente(s) de busca"
+                )
+
+            with ThreadPoolExecutor(max_workers=len(batch)) as executor:
+                future_map = {}
+                for offset, query in enumerate(batch):
+                    query_index = start + offset + 1
+                    future = executor.submit(
+                        self._run_search_query,
+                        topic_name,
+                        query,
+                        query_index,
+                        total_queries,
+                        max_results,
+                    )
+                    future_map[future] = query
+
+                for future in as_completed(future_map):
+                    try:
+                        batch_items = future.result()
+                    except Exception as exc:
+                        print(f"[radar] [{topic_name}] lote com erro: {exc}")
+                        continue
+
+                    for item in batch_items:
+                        url = str(item.get("url", "")).strip()
+                        if url and url not in seen_urls and url not in all_new_urls:
+                            all_items.append(item)
+                            all_new_urls.add(url)
+
+            if start + batch_size < total_queries and batch_pause_seconds > 0:
+                print(f"[radar] [{topic_name}] aguardando {batch_pause_seconds}s antes do proximo lote...")
+                time.sleep(batch_pause_seconds)
+
+        return all_items, all_new_urls
+
+    def _process_topic(self, topic: dict, config: dict, topic_state: dict) -> dict:
         topic_name = str(topic.get("name", "Tema sem nome"))
         topic_key = _slugify(topic_name)
-        topic_state = state["topics"].setdefault(topic_key, {})
-        # Sempre trimma para manter janela curta — desbloq tópicos travados
-        topic_state["seen_urls"] = topic_state.get("seen_urls", [])[-40:]
-        topic_state["seen_queries"] = topic_state.get("seen_queries", [])[-20:]
+        topic_state = copy.deepcopy(topic_state or {})
+        # Mantem uma janela ajustavel: memoria suficiente sem deixar o state crescer sem limite.
+        seen_urls_window = max(int(config.get("seen_urls_window", 120)), 20)
+        seen_queries_window = max(int(config.get("seen_queries_window", 48)), 8)
+        topic_state["seen_urls"] = topic_state.get("seen_urls", [])[-seen_urls_window:]
+        topic_state["seen_queries"] = topic_state.get("seen_queries", [])[-seen_queries_window:]
         seen_urls = set(topic_state["seen_urls"])
         seen_queries: list[str] = topic_state["seen_queries"]
         cycle_index: int = topic_state.get("cycle_index", 0)
         deep_minutes = int(config.get("deep_research_minutes", 40))
         max_results = max(int(config.get("max_results_per_topic", 8)), 1)
+        query_agents = max(int(config.get("query_agents_per_topic", 1)), 1)
 
         # Gera ângulos de busca NOVOS (evita repetir queries já usadas)
-        sub_queries = self._generate_sub_queries(topic, seen_queries=seen_queries, cycle_index=cycle_index)
+        sub_queries = self._generate_sub_queries(topic, seen_queries=seen_queries, config=config, cycle_index=cycle_index)
         total_queries = len(sub_queries)
-        pause_seconds = max(int((deep_minutes * 60) / total_queries), 30)
+        pause_seconds = max(int((deep_minutes * 60) / total_queries), max(int(config.get("query_pause_min_seconds", 20)), 0))
 
         print(f"[radar] '{topic_name}': {total_queries} buscas, ~{pause_seconds}s entre cada uma (~{deep_minutes} min total)")
 
-        all_items: list[dict] = []
-        all_new_urls: set[str] = set()
-
-        for idx, query in enumerate(sub_queries, start=1):
-            print(f"[radar] busca {idx}/{total_queries}: {query[:80]}")
-            result = self.search_tool.run(query=query, max_results=max_results)
-            if result.success and isinstance(result.output, list):
-                for item in result.output:
-                    url = str(item.get("url", "")).strip()
-                    if url and url not in seen_urls and url not in all_new_urls:
-                        all_items.append(item)
-                        all_new_urls.add(url)
-
-            # Pausa entre buscas para pesquisa profunda
-            if idx < total_queries:
-                print(f"[radar] aguardando {pause_seconds}s antes da próxima busca...")
-                time.sleep(pause_seconds)
+        all_items, all_new_urls = self._collect_query_results(
+            topic_name=topic_name,
+            sub_queries=sub_queries,
+            seen_urls=seen_urls,
+            max_results=max_results,
+            pause_seconds=pause_seconds,
+            query_agents=query_agents,
+        )
 
         if not all_items:
             topic_state["last_run_at"] = datetime.now().isoformat(timespec="seconds")
             topic_state["last_error"] = "nenhum resultado novo encontrado"
             # Salva as queries mesmo sem resultado para não repetir na próxima rodada
             updated_queries = seen_queries + sub_queries
-            topic_state["seen_queries"] = updated_queries[-20:]
+            topic_state["seen_queries"] = updated_queries[-seen_queries_window:]
             topic_state["cycle_index"] = cycle_index + 1
-            return {"topic": topic_name, "ok": False, "error": "nenhum resultado novo"}
+            return {
+                "topic": topic_name,
+                "topic_key": topic_key,
+                "ok": False,
+                "error": "nenhum resultado novo",
+                "topic_state": topic_state,
+            }
 
         generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         note_title = f"Radar - {topic_name} - {datetime.now().strftime('%Y-%m-%d %H%M')}"
         folder = str(topic.get("folder", f"Memoria/Radar/{topic_key}")).strip() or f"Memoria/Radar/{topic_key}"
         folder = f"{folder}/{datetime.now().strftime('%Y-%m-%d')}"
 
-        note_content = self._build_note(topic=topic, items=all_items, generated_at=generated_at, sub_queries=sub_queries)
+        note_content = self._build_note(
+            topic=topic,
+            items=all_items,
+            generated_at=generated_at,
+            sub_queries=sub_queries,
+            config=config,
+        )
         note_path = self.store.create_note(title=note_title, content=note_content, folder=folder)
 
         topic_state["last_run_at"] = datetime.now().isoformat(timespec="seconds")
         topic_state["last_note_path"] = note_path.relative_to(self.vault_path).as_posix()
         topic_state["last_error"] = ""
         merged_urls = list(seen_urls.union(all_new_urls))
-        topic_state["seen_urls"] = merged_urls[-40:]  # janela curta — recicla URLs mais rápido
+        topic_state["seen_urls"] = merged_urls[-seen_urls_window:]
 
         # Salva as queries usadas neste ciclo para evitar repetição futura
         updated_queries = seen_queries + sub_queries
-        topic_state["seen_queries"] = updated_queries[-20:]  # janela curta — força novos ângulos
+        topic_state["seen_queries"] = updated_queries[-seen_queries_window:]
         topic_state["cycle_index"] = cycle_index + 1
 
         print(f"[radar] '{topic_name}' concluído: {len(all_items)} fontes coletadas")
 
         # Adiciona bloco novo no feed diário
-        self._append_to_feed(
-            topic_name=topic_name,
-            items=all_items,
-            sub_queries=sub_queries,
-            note_path=topic_state["last_note_path"],
-            generated_at=generated_at,
-        )
-
-        # Notificação Windows
         now_str = datetime.now().strftime("%H:%M")
-        self._notify(
-            title=f"CRONUS — Nova pesquisa ({now_str})",
-            message=f"{topic_name}: {len(all_items)} fontes coletadas e salvas no Obsidian.",
-        )
         return {
             "topic": topic_name,
+            "topic_key": topic_key,
             "ok": True,
             "note_path": topic_state["last_note_path"],
             "results_found": len(all_items),
             "sub_queries": total_queries,
             "provider_ready": self.provider.is_available(),
+            "topic_state": topic_state,
+            "feed_payload": {
+                "topic_name": topic_name,
+                "items": all_items,
+                "sub_queries": sub_queries,
+                "note_path": topic_state["last_note_path"],
+                "generated_at": generated_at,
+            },
+            "notification": {
+                "title": f"CRONUS - Nova pesquisa ({now_str})",
+                "message": f"{topic_name}: {len(all_items)} fontes coletadas e salvas no Obsidian.",
+            },
         }
-
     def _append_to_feed(
         self,
         topic_name: str,
@@ -471,9 +719,10 @@ class ObsidianRadarWorker:
         feed_file = feed_folder / f"feed-{now.strftime('%Y-%m-%d')}.md"
 
         # Resumo direto das fontes — sem chamada extra à API
+        summary_items = max(int(self.load_config().get("feed_summary_items", 6)), 3)
         snippets = [
             f"- **{it.get('title', 'Sem título')}** — {it.get('snippet', '')[:150]}"
-            for it in items[:4]
+            for it in items[:summary_items]
         ]
         summary_text = "\n".join(snippets) if snippets else f"{len(items)} fontes coletadas."
 
@@ -498,20 +747,28 @@ class ObsidianRadarWorker:
                 f"# Feed de Pesquisas — {now.strftime('%d/%m/%Y')}\n"
                 f"_Atualizado automaticamente pelo CRONUS Radar_ {yesterday_link}\n"
             )
-            feed_file.write_text(header + block, encoding="utf-8")
+            self.store.atomic_write_text(feed_file, header + block)
         else:
-            with feed_file.open("a", encoding="utf-8") as f:
-                f.write(block)
+            existing = feed_file.read_text(encoding="utf-8", errors="ignore")
+            self.store.atomic_write_text(feed_file, existing + block)
 
         print(f"[radar] feed atualizado: {feed_file.name}")
 
-    def _build_note(self, topic: dict, items: list[dict], generated_at: str, sub_queries: list[str] | None = None) -> str:
+    def _build_note(
+        self,
+        topic: dict,
+        items: list[dict],
+        generated_at: str,
+        sub_queries: list[str] | None = None,
+        config: dict | None = None,
+    ) -> str:
         topic_name = str(topic.get("name", "Tema"))
         guidance = str(topic.get("notes", "")).strip()
-        memory_context, memory_hits = self.store.build_context(f"{topic_name}\n{guidance}", limit=3, max_chars=800)
+        memory_context, memory_hits = self.store.build_context(f"{topic_name}\n{guidance}", limit=10, max_chars=4000)
         queries_block = "\n".join(f"- {q}" for q in (sub_queries or [])) or "- busca padrão"
 
-        if self.provider.is_available():
+        use_ai_provider = bool((config or {}).get("use_ai_provider", True))
+        if use_ai_provider and self.provider.is_available() and not self._is_ai_cooling_down():
             # Limita fontes para controlar tokens de entrada
             items_for_ai = items[:6]
             sources_block = self._format_sources(items_for_ai)
@@ -521,6 +778,7 @@ class ObsidianRadarWorker:
                 Você é um analista de mercado. Transforme as fontes em nota Markdown concisa.
                 Responda em português. Cite % sempre que encontrar nas fontes.
                 Se não houver %, estime e sinalize com (estimativa).
+                IMPORTANTE: Sempre que citar uma empresa, ferramenta, nicho ou conceito relevante, envolva a palavra em colchetes duplos para criar um link no Obsidian, exemplo: [[Nome do Conceito]].
                 """
             )
             user_prompt = textwrap.dedent(
@@ -554,6 +812,9 @@ class ObsidianRadarWorker:
                 ## Ações recomendadas
                 (2 ações concretas baseadas nos dados)
 
+                ## Conexões e Grafo
+                (Liste de 3 a 5 [[Wikilinks]] relacionados a este tema e assuntos complementares)
+
                 ## Fontes
                 (título + URL, apenas as principais)
 
@@ -562,7 +823,7 @@ class ObsidianRadarWorker:
             )
             try:
                 wait_for_slot("radar:build_note")
-                completion = self.provider.complete(
+                completion = self._complete_with_provider(
                     CompletionRequest(
                         system=system,
                         messages=[Message(role="user", content=user_prompt)],
@@ -631,12 +892,12 @@ class ObsidianRadarWorker:
                 Sem mudanças confirmadas em {generated_at}.
 
                 ## Por que importa
-                O radar precisa de um provider de IA ou de novas fontes para gerar notas mais ricas.
+                O radar continua ativo, mas esta rodada nao encontrou fontes novas.
 
                 ## Possíveis ações
                 - Ajustar a busca do tema.
-                - Configurar um provider de IA.
-                - Aguardar a próxima rodada.
+                - Aguardar a proxima rodada.
+                - Manter a IA em cooldown caso exista limite temporario.
 
                 ## Fontes
                 - Nenhuma
@@ -664,7 +925,7 @@ class ObsidianRadarWorker:
             ## Possíveis ações
             - Revisar as fontes abaixo.
             - Refinar a query do tema.
-            - Configurar um provider para gerar síntese automática.
+            - Aguardar a IA sair do cooldown se houver limite temporario.
 
             ## Fontes
             {chr(10).join(source_lines)}
